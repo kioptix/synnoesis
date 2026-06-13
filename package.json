@@ -1,0 +1,33 @@
+{
+  "name": "synnoesis",
+  "version": "0.0.1",
+  "description": "A personal-assistant system where multiple AI agents confer and collaborate to solve problems together.",
+  "license": "Apache-2.0",
+  "author": "Groupe Kioptix Inc.",
+  "keywords": [
+    "ai",
+    "agents",
+    "multi-agent",
+    "assistant",
+    "orchestration",
+    "claude"
+  ],
+  "homepage": "https://synnoesis.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kioptix/synnoesis.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kioptix/synnoesis/issues"
+  },
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "README.md",
+    "NOTICE",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "echo \"no tests yet\" && exit 0"
+  }
+}
