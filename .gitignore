@@ -1,0 +1,42 @@
+# --- Secrets / credentials (NEVER commit) ---
+.env
+.env.*
+*.key
+*.pem
+*.crt
+*.token
+*token*.json
+*-token.json
+client_secret*.json
+credentials.json
+secrets.*
+mqtt-passwd*
+lan-api-key
+
+# --- Runtime state / data (clone-local, NEVER commit) ---
+state/
+*.jsonl
+*.log
+*.out
+*.bak*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.pytest_cache/
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
