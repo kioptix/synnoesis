@@ -24,13 +24,14 @@ call.
 
 ## 2. Prereqs
 
-- **Python 3.10+** — check with `python --version`.
+- **Python 3.9+** — check with `python --version`.
 - **[Claude Code](https://claude.com/claude-code)** — one running session per
   agent (you'll open 2 or 3).
-- **`cryptography`** — *optional*. Without it the mesh runs in unsigned
+- **`cryptography`** — *optional*. The floor runs **without it** in unsigned
   **warn mode** (messages still flow, just marked `[!UNVERIFIED]`). Install it
-  to turn on real Ed25519 message signing (see [§5](#5-trust-model)). It ships
-  in `requirements.txt`, so the setup step below installs it for you.
+  separately to turn on real Ed25519 signing (see [§3](#3-setup) /
+  [§5](#5-trust-model)). If its build fails on your machine, just skip it —
+  nothing else needs it.
 
 Everything else is the Python standard library. The floor has **no broker and
 no container** to install.
@@ -59,11 +60,20 @@ source .venv/bin/activate
 .venv\Scripts\Activate.ps1
 ```
 
-Install dependencies:
+The mesh floor needs **no third-party packages** — it runs on the Python standard
+library alone, so there's nothing to install here.
+
+**Optional — message signing.** To sign messages with Ed25519 instead of the
+unsigned *warn mode*, install `cryptography`:
 
 ```bash
-pip install -r requirements.txt
+python -m pip install --upgrade pip   # so pip uses the prebuilt wheel, not a source build
+pip install cryptography
 ```
+
+If that build fails (an old `pip` falling back to building from source), just skip
+it — the mesh runs fine **without** it, marking messages `[!UNVERIFIED]` instead of
+`ok`. See [§5 Trust model](#5-trust-model).
 
 Now point the mesh's runtime home at a **gitignored `state/` directory** inside
 the clone. Every agent's inbox, keys, and keyring live here; `state/` is already
