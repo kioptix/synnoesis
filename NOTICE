@@ -9,31 +9,50 @@ http://www.apache.org/licenses/LICENSE-2.0
 USAGE & COMPLIANCE
 ================================================================================
 
-Synnoesis orchestrates Anthropic's Claude using YOUR OWN credentials. It bundles
-no API keys and grants no Claude access of its own. Your use of Claude is
-governed by your own agreement with Anthropic, not by this project.
+Synnoesis is an orchestration layer. It can route to multiple model providers
+(e.g. Anthropic's Claude), directly or through gateways such as OpenRouter,
+always using YOUR OWN credentials. It bundles no API keys and grants no model
+access of its own. Your use of any model is governed by your own agreement with
+that provider (and any gateway you route through), not by this project.
 
-You are responsible for complying with Anthropic's terms:
+You are responsible for complying with the terms of whichever providers and
+gateways you use. For Anthropic/Claude specifically:
 
   * Personal / single-user use: a Claude subscription via the official Claude
     CLI is permitted.
 
   * Serving other people or customers (multi-user / commercial-facing): you must
-    use your OWN Anthropic API key under Anthropic's Commercial Terms -- NOT a
-    personal subscription. Routing other users' requests through personal
-    subscription credentials violates Anthropic's terms.
+    use your OWN Anthropic API key (or a commercial gateway/API such as
+    OpenRouter) -- NOT a personal subscription. Routing other users' requests
+    through personal subscription credentials violates Anthropic's terms.
 
-  * Review Anthropic's Consumer Terms, Commercial Terms, and Usage Policy before
-    deploying: https://www.anthropic.com/legal
+  * Review the relevant provider/gateway terms before deploying -- e.g.
+    Anthropic: https://www.anthropic.com/legal ; OpenRouter:
+    https://openrouter.ai/terms
+
+Data note: prompts and outputs routed through a third-party gateway (e.g.
+OpenRouter) pass through that gateway and the downstream provider, each subject
+to its own data-retention and privacy terms. Review them for sensitive use.
 
 Commercial use of Synnoesis itself is permitted under the Apache License 2.0 --
 just bring your own keys and protect yourself.
 
 ================================================================================
+EXPORT & ELIGIBILITY
+================================================================================
+
+Access to Anthropic's Claude models is subject to Anthropic's geographic
+availability and to applicable export-control and sanctions laws (including U.S.
+export controls, which in 2026 restricted access to certain frontier models for
+foreign nationals). You are responsible for ensuring that you, your deployment,
+and your users are eligible to access the specific models you use. Synnoesis is
+model-agnostic and does not guarantee the availability of any particular model.
+
+================================================================================
 TRADEMARKS
 ================================================================================
 
-"Groupe Kioptix Inc.", "Kioptix", "Synnoesis", "KeX", and associated logos are
+"Groupe Kioptix Inc.", "Kioptix", "Synnoesis", and associated logos are
 trademarks of Groupe Kioptix Inc. They are NOT licensed under the Apache License
 2.0 (see Section 6 of the License). You may use this software freely; you may not
 use the names or logos to brand your own product or to imply endorsement by, or

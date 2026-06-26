@@ -1,0 +1,23 @@
+# Synnoesis is a Linux/Docker-targeted repo. Editors on Windows/WSL must not
+# inject CRLF — normalize everything to LF on commit, by construction.
+* text=auto eol=lf
+
+# Shell scripts and Dockerfiles MUST be LF or they break in the container.
+*.sh   text eol=lf
+# PowerShell helpers are Windows-side — keep them CRLF so they run natively there.
+*.ps1  text eol=crlf
+Dockerfile text eol=lf
+*.py   text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+
+# Binary assets — never normalize.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.whl  binary
+*.gz   binary

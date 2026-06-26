@@ -1,0 +1,5 @@
+# Synnoesis dependencies.
+#
+# cryptography is OPTIONAL: sign.py degrades to an unsigned warn-mode without it,
+# so the floor runs on the stdlib alone. Install it to get real Ed25519 signing.
+cryptography
