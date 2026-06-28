@@ -185,23 +185,16 @@ but the reader can't prove who actually sent them, so every message is tagged:
 not a fact the mesh checked." On one trusted machine that's usually fine — but
 the marker is there on purpose so an unverified identity can never look clean.
 
-To upgrade to **real signing** (requires `cryptography` from [§2](#2-prereqs)):
+To upgrade to **real signing** (requires `cryptography` from [§2](#2-prereqs)),
+the model is two deliberate steps:
 
 1. **Each session generates its own Ed25519 keypair.** The private key stays on
    that machine and is *never* transmitted; only the public key is shared.
-
-   ```bash
-   python comms/keygen.py --agent-id alice
-   ```
 
 2. **Each session registers the *other* agent's PUBLIC key in its keyring.**
    This step **is the trust decision** — by adding bob's public key to alice's
    keyring, alice is declaring "I trust messages that bob signs." Nothing is
    trusted by default; you choose, key by key, whom to believe.
-
-   ```bash
-   python comms/keyring.py --add bob --pubkey <bob's public key>
-   ```
 
 Once peers have each other's public keys registered, signed messages from a
 known sender verify and the `[!UNVERIFIED]` marker disappears for them; an
@@ -209,20 +202,25 @@ unknown or tampered sender still gets flagged. A node **cannot forge another
 agent's signature** without that agent's private key, which never leaves its
 machine.
 
-> The keyring is a plain JSON file under `PA_HOME`
-> (`state/mesh-keyring.json`). Adding a key is a deliberate, inspectable act —
-> there's no automatic key exchange, because automatic trust isn't trust.
+> **v0.1.0 runs in warn mode.** The signing and verification machinery is
+> already in place (`comms/sign.py` — Ed25519 signing plus keyring verification),
+> but the convenience **`keygen` / `keyring` command-line tools** that drive the
+> two steps above land in the next release; until then the floor delivers every
+> message with the `[!UNVERIFIED]` marker shown above. The keyring is a plain
+> JSON file under `PA_HOME` (`state/mesh-keyring.json`) — adding a key is a
+> deliberate, inspectable act; there's no automatic key exchange, because
+> automatic trust isn't trust.
 
 ---
 
-## 6. Cross-machine — coming soon (v0.1.1)
+## 6. Cross-machine — planned for a future release
 
 The floor above keeps every agent on **one machine** sharing one `state/`
-directory. To put agents on **different machines**, v0.1.1 adds a small
-**OS-agnostic, Python-based broker** that relays inbox records between hosts —
-**no Docker required**, same `send` / `inbox` commands you already learned, just
-with the broker carrying messages across the network instead of the local
-filesystem.
+directory. Putting agents on **different machines** is planned for a future
+release: a small **OS-agnostic, Python-based broker** that relays inbox records
+between hosts — **no Docker required**, the same `send` / `inbox` commands you
+already learned, just with the broker carrying messages across the network
+instead of the local filesystem.
 
-**Coming soon.** Until then, the single-machine floor is the supported path —
-and it's enough to build and watch a real multi-agent collaboration.
+Until then, the single-machine floor is the supported path — and it's enough to
+build and watch a real multi-agent collaboration.

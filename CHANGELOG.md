@@ -10,6 +10,12 @@ part held stable; transports underneath it may evolve.
 
 ## [Unreleased]
 
+### Fixed
+- `docs/quickstart.md` — corrected the signing walkthrough to match v0.1.0:
+  removed the `keygen`/`keyring` CLI invocations that don't exist yet (the floor
+  runs in warn mode; those convenience tools land in a later release), and
+  de-versioned the cross-machine broker note from "v0.1.1" to "a future release."
+
 ## [0.1.0] — first MVP: the mesh floor
 
 The smallest complete slice: two or more Claude Code sessions on one machine
