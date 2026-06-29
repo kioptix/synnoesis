@@ -25,7 +25,7 @@ import re
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 # Windows default stdout encoding is cp1252 which crashes on arrows / em
 # dashes / ellipsis common in agent-to-agent comms. Force UTF-8 so the
@@ -38,6 +38,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import paths
+import sign
 
 INBOX_DIR = paths.service_dir("comms")
 
@@ -78,7 +79,7 @@ def parse_iso(s: str) -> datetime | None:
     return dt
 
 
-def main() -> int:
+def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Print recent agent inbox tail")
     ap.add_argument("--agent-id", default=os.environ.get("PA_AGENT_ID"),
                     help="agent whose inbox to read (default: $PA_AGENT_ID)")
@@ -94,7 +95,21 @@ def main() -> int:
                     help="include urgency=fyi items (default: skip)")
     ap.add_argument("--include-state", action="store_true",
                     help="include presence/state-topic messages (default: skip)")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
+    # Opt-in read-side signing enforcement (default unset/OFF -> today's warn-only
+    # behavior, byte-for-byte). ON: deliver ONLY records whose _verify.status == "ok";
+    # suppress bad/no-key/unsigned. Gates on the already-stamped status string -- no
+    # new verifier, no new field. See sign.verify_against_keyring for the vocabulary.
+    enforce = (os.environ.get("SYN_ENFORCE_SIGNING") or "").strip() not in ("", "0")
+    # If enforce is requested but this host lacks `cryptography`, every record would
+    # verify as "unavailable" -- silently rejecting 100% of traffic is the "absence
+    # masquerading as success" failure mode. Fail LOUD at startup instead of black-
+    # holing the inbox: one-line stderr config-error + non-zero exit.
+    if enforce and not sign.CRYPTO_AVAILABLE:
+        print("error: SYN_ENFORCE_SIGNING is set but the 'cryptography' library is "
+              "not installed -- cannot verify signatures; install cryptography or "
+              "unset SYN_ENFORCE_SIGNING", file=sys.stderr)
+        return 1
     if not args.agent_id:
         print("error: pass --agent-id or set PA_AGENT_ID", file=sys.stderr)
         return 1
@@ -196,11 +211,36 @@ def main() -> int:
               f"excluding {sorted(excluded)})")
         return 0
 
-    tz = ZoneInfo(DISPLAY_TZ)
+    try:
+        tz = ZoneInfo(DISPLAY_TZ)
+    except ZoneInfoNotFoundError:
+        # No time-zone database on this host -- e.g. a clean Windows venv with no
+        # `tzdata` PyPI package, where even ZoneInfo("UTC") (the DISPLAY_TZ default)
+        # raises. Degrade to stdlib UTC + a one-time warning instead of crashing the
+        # read. Do NOT retry ZoneInfo("UTC") -- it needs tzdata too. This preserves
+        # the "stdlib only, no required runtime deps" promise (graceful degradation).
+        tz = timezone.utc
+        print("warning: no time-zone database (tzdata) available; showing times in "
+              "UTC -- run `pip install tzdata` for local-zone display.",
+              file=sys.stderr)
     print(f"# {args.agent_id} inbox — last {args.since}, {len(matches)} item(s)")
+    suppressed = 0
     for m in matches:
+        vstat = m.get("verify")
+        # Enforce mode (SYN_ENFORCE_SIGNING set): deliver ONLY "ok"; SKIP (do not
+        # print) any record whose verify status is not "ok" (bad/no-key/unsigned/
+        # absent), counting the suppression so we can report it on stderr.
+        if enforce and vstat != "ok":
+            suppressed += 1
+            continue
         local = m["ts"].astimezone(tz)
         stamp = local.strftime("%H:%M")
+        # Dynamic zone abbreviation off the tz-aware `local` -- NOT a hardcoded
+        # literal. DISPLAY_TZ defaults to UTC, so a fixed "EDT" would mislabel the
+        # default user's times by their UTC offset. %Z renders UTC->"UTC",
+        # America/New_York->"EDT"/"EST" (DST-aware), and the tzdata-absent fallback
+        # (tz=timezone.utc) ->"UTC", keeping the label honest in every case.
+        zlabel = local.strftime("%Z")
         age_str = (f"{m['age_min']}m" if m['age_min'] < 60
                    else f"{m['age_min']//60}h{m['age_min']%60:02d}m")
         # Truncate preview at 200 chars so the boot summary stays readable
@@ -214,9 +254,13 @@ def main() -> int:
         # forgery; Phase 0 DELIVERS these, doesn't quarantine) AND ABSENT/None
         # (an untagged message must NOT render clean). Phase-0 safety is coupled
         # to this Phase-1 marker coverage.
-        vstat = m.get("verify")
         vmark = "" if vstat == "ok" else f" [!{(vstat or 'UNVERIFIED').upper()}]"
-        print(f"  [{stamp} EDT] {m['from']}{vmark} (urg={m['urg']}, age={age_str}): {prev}")
+        print(f"  [{stamp} {zlabel}] {m['from']}{vmark} (urg={m['urg']}, age={age_str}): {prev}")
+    # Enforce mode NEVER suppresses silently: always announce a non-zero count on
+    # stderr so the consumer knows traffic was withheld. Exit code stays 0 (read-
+    # only diagnostic invariant).
+    if enforce and suppressed >= 1:
+        print(f"# enforce: suppressed {suppressed} unverified record(s)", file=sys.stderr)
     return 0
 
 

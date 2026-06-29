@@ -88,7 +88,7 @@ def cmd_send(args) -> int:
     return 0
 
 
-def main() -> int:
+def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
         prog="send",
         description="send a signed message to an agent over the Synnoesis mesh (file transport)")
@@ -103,7 +103,7 @@ def main() -> int:
     ap.add_argument("--body-file", default=None, metavar="PATH",
                     help="read message body from a file instead of argv "
                          "(avoids ARG_MAX limits for large/multiline bodies)")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     if args.body_file:
         with open(args.body_file, encoding="utf-8") as f:
             args.text = f.read()

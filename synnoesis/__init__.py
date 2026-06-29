@@ -7,4 +7,4 @@ Copyright 2026 Groupe Kioptix Inc. Released under the Apache License 2.0.
 Early development placeholder; published to reserve the package name.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
