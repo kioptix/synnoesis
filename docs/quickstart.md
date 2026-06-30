@@ -24,7 +24,7 @@ call.
 
 ## 2. Prereqs
 
-- **Python 3.9+** — check with `python --version`.
+- **Python 3.10+** — check with `python --version`.
 - **[Claude Code](https://claude.com/claude-code)** — one running session per
   agent (you'll open 2 or 3).
 - **`cryptography`** — *optional*. The floor runs **without it** in unsigned
@@ -118,7 +118,16 @@ export PA_AGENT_ID=bob        # bash
 $env:PA_AGENT_ID = "bob"      # PowerShell
 ```
 
-From **session A**, send a message to bob:
+From **session A**, send a message to bob. The simplest entrypoint is the
+top-level console command — it works straight from the clone, **no install
+needed**:
+
+```bash
+python synnoesis.py send --to bob "hello from alice"
+```
+
+This is a thin doorway over the floor script below — every flag is the same.
+The original script keeps working verbatim and is exactly equivalent:
 
 ```bash
 python comms/send.py --local --to bob "hello from alice"
@@ -128,11 +137,24 @@ python comms/send.py --local --to bob "hello from alice"
 into bob's inbox file under `PA_HOME`. (The sender id comes from
 `PA_AGENT_ID`.)
 
-In **session B**, read bob's inbox:
+In **session B**, read bob's inbox — again the console command first, with the
+floor script equivalent right after:
 
 ```bash
+python synnoesis.py read --agent-id bob
+# equivalently:
 python comms/inbox.py --agent-id bob
 ```
+
+> **Optional — install a command.** If you'd rather type `synnoesis` instead of
+> `python synnoesis.py`, install it as a console script from the clone:
+> ```bash
+> pip install -e .
+> ```
+> Then `synnoesis send --to bob "hi"` and `synnoesis read --agent-id bob` work
+> from any directory. `python -m synnoesis send …` works too. The install is
+> purely a convenience — the no-install `python synnoesis.py` path is the
+> supported floor and never requires it.
 
 You'll see the message, something like:
 
@@ -186,15 +208,31 @@ not a fact the mesh checked." On one trusted machine that's usually fine — but
 the marker is there on purpose so an unverified identity can never look clean.
 
 To upgrade to **real signing** (requires `cryptography` from [§2](#2-prereqs)),
-the model is two deliberate steps:
+the model is two deliberate steps, each driven by a thin CLI over `comms/sign.py`:
 
 1. **Each session generates its own Ed25519 keypair.** The private key stays on
-   that machine and is *never* transmitted; only the public key is shared.
+   that machine and is *never* transmitted; only the public key is shared. In
+   alice's session:
+
+   ```bash
+   python comms/keygen.py --agent-id alice
+   ```
+
+   This writes alice's private key under `PA_HOME` and prints her **public** key
+   to share. Run the same in bob's session with `--agent-id bob`.
 
 2. **Each session registers the *other* agent's PUBLIC key in its keyring.**
    This step **is the trust decision** — by adding bob's public key to alice's
-   keyring, alice is declaring "I trust messages that bob signs." Nothing is
-   trusted by default; you choose, key by key, whom to believe.
+   keyring, alice is declaring "I trust messages that bob signs." In alice's
+   session, paste bob's printed public key:
+
+   ```bash
+   python comms/keyring.py --add bob --pubkey <bob pubkey>
+   ```
+
+   Bob does the mirror — `python comms/keyring.py --add alice --pubkey <alice
+   pubkey>`. Nothing is trusted by default; you choose, key by key, whom to
+   believe.
 
 Once peers have each other's public keys registered, signed messages from a
 known sender verify and the `[!UNVERIFIED]` marker disappears for them; an
@@ -202,14 +240,46 @@ unknown or tampered sender still gets flagged. A node **cannot forge another
 agent's signature** without that agent's private key, which never leaves its
 machine.
 
-> **v0.1.0 runs in warn mode.** The signing and verification machinery is
-> already in place (`comms/sign.py` — Ed25519 signing plus keyring verification),
-> but the convenience **`keygen` / `keyring` command-line tools** that drive the
-> two steps above land in the next release; until then the floor delivers every
-> message with the `[!UNVERIFIED]` marker shown above. The keyring is a plain
-> JSON file under `PA_HOME` (`state/mesh-keyring.json`) — adding a key is a
-> deliberate, inspectable act; there's no automatic key exchange, because
-> automatic trust isn't trust.
+> The keyring is a plain JSON file under `PA_HOME` (`state/mesh-keyring.json`) —
+> adding a key is a deliberate, inspectable act; there's no automatic key
+> exchange, because automatic trust isn't trust.
+
+---
+
+## 5a. Enforcing signatures (opt-in)
+
+By default the floor runs in **warn mode**: an unverified message is still
+delivered, just marked. If you want the inbox to **refuse** anything it can't
+cryptographically verify, set `SYN_ENFORCE_SIGNING`:
+
+```bash
+# bash / zsh
+export SYN_ENFORCE_SIGNING=1
+```
+
+```powershell
+# Windows PowerShell
+$env:SYN_ENFORCE_SIGNING = "1"
+```
+
+With it set, `read` delivers **only** records whose signature verifies (`ok`)
+and **suppresses** every unverified one — a forged/tampered signature (`bad`), a
+sender not in your keyring (`no-key`), or an unsigned message (`unsigned`). When
+one or more records are suppressed, a single summary line is written to stderr so
+suppression is never silent:
+
+```
+# enforce: suppressed 2 unverified record(s)
+```
+
+The read still exits `0` — enforce changes *what's shown*, not the read-only
+exit contract. Unset the variable (or set it empty) to return to warn mode.
+
+> **If you ask to enforce but can't verify, the tool fails loudly.** Setting
+> `SYN_ENFORCE_SIGNING` while `cryptography` is **not** installed means the
+> verifier can't check anything — rather than silently black-holing 100% of your
+> traffic, `read` prints a one-line config error to stderr and exits **non-zero**
+> at startup. Install `cryptography` (see [§2](#2-prereqs)) or unset the variable.
 
 ---
 

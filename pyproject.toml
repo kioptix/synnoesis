@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "synnoesis"
-version = "0.1.0"
+version = "0.2.0"
 description = "A personal-assistant system where multiple AI agents confer and collaborate to solve problems together."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [{ name = "Groupe Kioptix Inc." }]
 keywords = ["ai", "agents", "multi-agent", "assistant", "orchestration", "claude"]
@@ -21,6 +21,9 @@ classifiers = [
 Homepage = "https://synnoesis.dev"
 Repository = "https://github.com/kioptix/synnoesis"
 Issues = "https://github.com/kioptix/synnoesis/issues"
+
+[project.scripts]
+synnoesis = "synnoesis.cli:main"
 
 [tool.setuptools]
 packages = ["synnoesis"]
