@@ -24,7 +24,7 @@ call.
 
 ## 2. Prereqs
 
-- **Python 3.9+** — check with `python --version`.
+- **Python 3.10+** — check with `python --version`.
 - **[Claude Code](https://claude.com/claude-code)** — one running session per
   agent (you'll open 2 or 3).
 - **`cryptography`** — *optional*. The floor runs **without it** in unsigned

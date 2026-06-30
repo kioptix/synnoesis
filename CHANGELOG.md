@@ -12,9 +12,10 @@ part held stable; transports underneath it may evolve.
 
 ## [0.2.0] — console command, opt-in enforcement, signing CLIs
 
-A non-breaking minor release: a console entrypoint, an opt-in signing-enforcement
-mode, and the two thin signing CLIs the quickstart had pointed at. No new
-transports, no new runtime deps, no change to the frozen on-disk contract.
+A minor release: a console entrypoint, an opt-in signing-enforcement mode, and
+the two thin signing CLIs the quickstart had pointed at. The message contract and
+on-disk format are unchanged (no new transports, no new runtime deps); the
+minimum supported Python is raised to 3.10 (see **Changed**).
 
 ### Added
 - Console command — run the mesh with no install via `python synnoesis.py`
@@ -31,6 +32,13 @@ transports, no new runtime deps, no change to the frozen on-disk contract.
   a born-local Ed25519 keypair for an agent and prints its public key.
 - `comms/keyring.py` — thin CLI to register another agent's public key in the
   local keyring (the trust decision), driving the §5 walkthrough end-to-end.
+
+### Changed
+- Minimum Python is now **3.10** (was 3.9). Python 3.9 reached end-of-life in
+  October 2025, and the `cryptography` library used for optional signing no
+  longer ships 3.9 wheels — requiring 3.10+ keeps the signing path on current,
+  security-patched `cryptography` and the install a simple `pip install
+  cryptography` (no source build, no version pin).
 
 ### Fixed
 - `docs/quickstart.md` — corrected the signing walkthrough to match the shipped
