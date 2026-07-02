@@ -31,6 +31,33 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sign  # noqa: E402
 
 
+def _restrict_perms(key_path: Path) -> None:
+    """Restrict the born-local private key to owner-only (chmod 0o600). On
+    Windows (and any filesystem that ignores POSIX permission bits) chmod cannot
+    remove group/other access, so rather than leave the operator falsely assured
+    the key is locked down, WARN accurately. The key still works; confirming its
+    at-rest permission via the user-account directory ACL is then the operator's
+    call."""
+    honored = False
+    try:
+        os.chmod(key_path, 0o600)
+        # On 'nt', chmod only toggles the read-only bit -- it does NOT drop
+        # group/other read -- so a 0o600 request is effectively a no-op for
+        # confidentiality. Treat that as "not honored" and warn.
+        honored = (os.name != "nt")
+    except OSError:
+        honored = False
+    if not honored:
+        print(
+            "WARNING: could not restrict permissions on the private key file:\n"
+            f"  {key_path}\n"
+            "  chmod 0o600 is not honored on this OS/filesystem (e.g. Windows).\n"
+            "  The key now relies on your user-account directory ACL for "
+            "protection;\n"
+            "  verify this file is not readable by other users.",
+            file=sys.stderr)
+
+
 def cmd_keygen(args) -> int:
     if not sign.CRYPTO_AVAILABLE:
         print("ERROR: cryptography library not available - cannot keygen.\n"
@@ -52,17 +79,18 @@ def cmd_keygen(args) -> int:
     priv_b64, pub_b64 = sign.generate_keypair()
     # Format matches sign.load_private_key (reads .strip()): one base64 line.
     key_path.write_text(priv_b64 + "\n", encoding="utf-8")
-    try:
-        os.chmod(key_path, 0o600)
-    except OSError:
-        pass  # best-effort; Windows / odd filesystems may not honor chmod
+    _restrict_perms(key_path)
 
+    fp = sign.pubkey_fingerprint(pub_b64)
     print(f"keypair generated for agent '{args.agent_id}'")
     print(f"  private key: {key_path}  (KEEP LOCAL - never transmit)")
     print(f"  public key : {pub_b64}")
+    print(f"  fingerprint: {fp}")
     print()
-    print("Next: register the PUBLIC key (safe to share) in a peer's keyring:")
-    print(f"  python comms/keyring.py --add {args.agent_id} --pubkey {pub_b64}")
+    print("Next: share the PUBLIC key (safe to share) AND read the FINGERPRINT to")
+    print("your peer over a trusted channel. They verify it matches, then pin it:")
+    print(f"  python comms/keyring.py --add {args.agent_id} --pubkey {pub_b64} "
+          f"--expect-fingerprint {fp}")
     return 0
 
 

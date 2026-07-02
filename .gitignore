@@ -20,6 +20,11 @@ state/
 *.out
 *.bak*
 
+# --- Internal design/tracking docs (NEVER publish) ---
+# Working specs, build logs, roadmaps live here and stay OUT of the public repo.
+# The published surface is code + user docs (docs/) -- not our working specs.
+internal/
+
 # --- Python ---
 __pycache__/
 *.py[cod]
