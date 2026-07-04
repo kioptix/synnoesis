@@ -108,12 +108,12 @@ def _keygen_rc_crypto_absent() -> int:
 def _perms_warns(osname: str) -> bool:
     """Drive keygen._restrict_perms with os.name forced to `osname`; True iff it
     emitted the WARNING (i.e. detected chmod can't restrict on this OS)."""
-    saved = keygen.os.name
-    keygen.os.name = osname
     buf = io.StringIO()
     fd, name = tempfile.mkstemp(prefix="syn-perm-")
     os.close(fd)  # close the descriptor or Windows won't let us unlink it
     tf = Path(name)
+    saved = keygen.os.name
+    keygen.os.name = osname
     try:
         with contextlib.redirect_stderr(buf):
             keygen._restrict_perms(tf)
