@@ -100,6 +100,18 @@ def main(argv=None) -> int:
     # behavior, byte-for-byte). ON: deliver ONLY records whose _verify.status == "ok";
     # suppress bad/no-key/unsigned. Gates on the already-stamped status string -- no
     # new verifier, no new field. See sign.verify_against_keyring for the vocabulary.
+    #
+    # SECURITY INVARIANT -- do NOT break this when extending to cross-machine:
+    #   This gate trusts `verify`, a status stamped by whatever WROTE the record.
+    #   On the local floor that is safe -- the local stamper is a trusted writer.
+    #   It becomes FATAL the instant a remote/untrusted writer can set that field:
+    #   a MITM or malicious broker that writes {_from: alice, verify: "ok"} onto a
+    #   forged record would have it delivered as verified, with ZERO crypto broken.
+    #   Therefore ANY cross-machine / remote-writer read path MUST locally re-parse
+    #   the payload and re-verify the signature against ITS OWN keyring
+    #   (sign.verify_against_keyring), and gate on THAT result -- never on a
+    #   writer-supplied `verify`. Verify at the trust boundary you control; a
+    #   relayed verdict is an untrusted hint.
     enforce = (os.environ.get("SYN_ENFORCE_SIGNING") or "").strip() not in ("", "0")
     # If enforce is requested but this host lacks `cryptography`, every record would
     # verify as "unavailable" -- silently rejecting 100% of traffic is the "absence
@@ -230,6 +242,9 @@ def main(argv=None) -> int:
         # Enforce mode (SYN_ENFORCE_SIGNING set): deliver ONLY "ok"; SKIP (do not
         # print) any record whose verify status is not "ok" (bad/no-key/unsigned/
         # absent), counting the suppression so we can report it on stderr.
+        # SECURITY: `vstat` is writer-stamped -- trustworthy on the local floor ONLY.
+        # See the SECURITY INVARIANT at the `enforce` definition before reusing this
+        # gate on any cross-machine / remote-writer path (re-verify locally there).
         if enforce and vstat != "ok":
             suppressed += 1
             continue

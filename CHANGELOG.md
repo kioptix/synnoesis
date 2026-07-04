@@ -10,6 +10,36 @@ part held stable; transports underneath it may evolve.
 
 ## [Unreleased]
 
+## [0.3.0] — key-distribution floor hardening
+
+A minor release hardening the key-distribution UX on the existing Ed25519 + JSON
+keyring. Stdlib-only, no new runtime deps, keyring entry shape unchanged, message
+contract and on-disk format unchanged — all additive over v0.2.0.
+
+### Added
+- Key **fingerprints** — `synnoesis-fp:<sha256 of the 32-byte Ed25519 pubkey>`,
+  printed by `keygen` and a new `fingerprint --agent-id <id>` command, for
+  out-of-band key comparison between two agents (Signal safety-number style).
+- `keyring --add --expect-fingerprint <fp>` — computes the added key's
+  fingerprint and **refuses on mismatch**, mechanizing the out-of-band verify.
+- **Refuse-on-conflict** `keyring --add` — adding an existing agent-id with a
+  *different* key is refused (no silent identity overwrite) unless `--rotate` is
+  passed; `keyring --rotate` is the explicit key-replacement path.
+- `doctor` — prints resolved `PA_HOME`, agent-id, private-key-present, and
+  cryptography-available; surfaces a corrupt keyring distinctly. Kills silent
+  env/config drift.
+- `keyring --export` / `--import` — text, `known_hosts`-shape; round-trips the
+  keyring so key-loss recovery is a file copy, not N manual pastes.
+
+### Changed
+- A key command (`keygen`) now **fails loud** (non-zero exit + clear stderr) when
+  `cryptography` is unavailable, instead of exiting 0 while inert.
+- Accurate Windows key-permissions warning when `chmod 0o600` no-ops on the
+  filesystem (points at the user-dir ACL rather than reporting a false success).
+- Write-path hardening — pubkeys are validated (base64 + 32-byte length) on every
+  `--add`/`--import` so a malformed key can't be pinned; keyring writes are atomic
+  (`.tmp` + `os.replace`) and refuse to overwrite an unparseable keyring.
+
 ## [0.2.0] — console command, opt-in enforcement, signing CLIs
 
 A minor release: a console entrypoint, an opt-in signing-enforcement mode, and
@@ -84,6 +114,7 @@ Docker.
 - Cross-machine messaging (an OS-agnostic, Python-based broker) is planned for a
   future release.
 
-[Unreleased]: https://github.com/kioptix/synnoesis/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/kioptix/synnoesis/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/kioptix/synnoesis/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/kioptix/synnoesis/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/kioptix/synnoesis/releases/tag/v0.1.0

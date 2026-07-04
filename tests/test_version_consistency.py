@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""test_version_consistency.py -- gate #7: every version site reads 0.2.0, atomically.
+"""test_version_consistency.py -- gate #7: every version site reads 0.3.0, atomically.
 
 Version drift across the metadata files (the bug an earlier hand-fix had to correct)
 is caught here so a release can never ship mismatched versions. Four file-based
 version sites must all read the SAME string AND that string must be the expected
-release version ``0.2.0``:
+release version ``0.3.0``:
 
   * ``pyproject.toml``            -> [project] version
   * ``synnoesis/__init__.py``    -> __version__
@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-EXPECTED = "0.2.0"
+EXPECTED = "0.3.0"
 
 _failures: list[str] = []
 

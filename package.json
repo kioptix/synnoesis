@@ -1,6 +1,6 @@
 {
   "name": "synnoesis",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A personal-assistant system where multiple AI agents confer and collaborate to solve problems together.",
   "license": "Apache-2.0",
   "author": "Groupe Kioptix Inc.",

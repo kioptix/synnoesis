@@ -22,6 +22,7 @@ never crash a caller.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import secrets
 from datetime import datetime, timezone
@@ -77,6 +78,42 @@ def _load_private(private_b64: str):
 
 def _load_public(public_b64: str):
     return Ed25519PublicKey.from_public_bytes(base64.b64decode(public_b64))
+
+
+# ---- public-key fingerprint (stdlib-only; works without `cryptography`) ---
+# A short, stable string two agents compare OUT-OF-BAND to confirm they hold the
+# same key before pinning it (the Signal "safety number" idea). It is sha256 over
+# the RAW 32-byte Ed25519 public key (base64-decode the stored pubkey), hex-
+# encoded, behind a `synnoesis-fp:` label.
+#
+# Deliberately NOT OpenSSH-compatible: `ssh-keygen -lf` hashes the ssh-ed25519
+# WIRE BLOB and base64-no-pad encodes the digest — different bytes. Claiming
+# interop and being subtly wrong would train operators to ignore fingerprint
+# mismatches, the exact anti-pattern a fingerprint exists to stop. Two Synnoesis
+# agents compute THIS identically, which is all an OOB compare needs. Pure
+# hashlib -> available even when `cryptography` is not installed.
+FP_PREFIX = "synnoesis-fp:"
+
+
+def decode_pubkey(public_b64: str) -> bytes:
+    """base64-decode an Ed25519 public key and assert it is the right size.
+    Raises ValueError on bad base64 OR a wrong length (an Ed25519 raw public key
+    is exactly 32 bytes). This is the ONE validator every WRITE path should run
+    so a malformed key can never be silently pinned."""
+    try:
+        raw = base64.b64decode(public_b64, validate=True)
+    except Exception as e:  # noqa: BLE001 — malformed base64 -> ValueError
+        raise ValueError(f"not a valid base64 public key: {e}") from e
+    if len(raw) != 32:
+        raise ValueError(f"Ed25519 public key must be 32 bytes, got {len(raw)}")
+    return raw
+
+
+def pubkey_fingerprint(public_b64: str) -> str:
+    """Return 'synnoesis-fp:<hex sha256 of the raw 32-byte pubkey>' for the
+    base64 Ed25519 public key `public_b64`. Raises ValueError if the input is
+    not a valid 32-byte Ed25519 public key."""
+    return FP_PREFIX + hashlib.sha256(decode_pubkey(public_b64)).hexdigest()
 
 
 # ---- signature domain separation (crypto-design v0.2 §3a) ----------------
@@ -335,6 +372,26 @@ def load_keyring() -> dict:
         return data if isinstance(data, dict) else {"agents": {}}
     except (OSError, ValueError):
         return {"agents": {}}
+
+
+def load_keyring_strict() -> dict:
+    """Like load_keyring, but for callers that must NOT silently build on a
+    corrupt ring (writers, diagnostics). Returns {"agents": {}} for a MISSING
+    file, but RAISES ValueError if the file exists and is unreadable / unparseable
+    / structurally wrong — so a transient corruption is surfaced, never silently
+    overwritten (which would destroy every pinned key, the worst failure for a
+    trust store)."""
+    path = _mesh_keys_dir().parent / "mesh-keyring.json"
+    if not path.exists():
+        return {"agents": {}}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        raise ValueError(f"keyring at {path} is unreadable/corrupt: {e}") from e
+    if not isinstance(data, dict) or not isinstance(data.get("agents", {}), dict):
+        raise ValueError(f"keyring at {path} is structurally invalid")
+    data.setdefault("agents", {})
+    return data
 
 
 def new_message(from_id: str, to_id: str, body: str,

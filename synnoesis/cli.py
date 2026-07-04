@@ -25,7 +25,8 @@ def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else list(argv)
     sys.path.insert(0, str(_floor_dir()))     # ONE bootstrap, here only
     if not argv or argv[0] in ("-h", "--help"):
-        print("usage: synnoesis {send|read} [args...]")
+        print("usage: synnoesis "
+              "{send|read|keygen|keyring|fingerprint|doctor} [args...]")
         return 0 if argv else 2
     sub, rest = argv[0], argv[1:]
     if sub == "send":
@@ -34,7 +35,20 @@ def main(argv=None) -> int:
     if sub in ("read", "inbox"):
         import inbox
         return inbox.main(rest)
-    print(f"unknown subcommand {sub!r}; expected send|read", file=sys.stderr)
+    if sub == "keygen":
+        import keygen
+        return keygen.main(rest)
+    if sub == "keyring":
+        import keyring
+        return keyring.main(rest)
+    if sub == "fingerprint":
+        import fingerprint
+        return fingerprint.main(rest)
+    if sub == "doctor":
+        import doctor
+        return doctor.main(rest)
+    print(f"unknown subcommand {sub!r}; expected "
+          "send|read|keygen|keyring|fingerprint|doctor", file=sys.stderr)
     return 2
 
 
