@@ -6,21 +6,23 @@
 <title>Synnoesis — Minds thinking together</title>
 <meta name="description" content="Synnoesis is a multi-agent system where independent AI agents confer, collaborate, and solve problems together. Model-agnostic, bring your own keys. Open source, Apache 2.0." />
 
-<link rel="canonical" href="https://kioptix.github.io/synnoesis/" />
+<link rel="canonical" href="https://synnoesis.dev/" />
 
 <!-- Open Graph / social preview (LinkedIn, X, etc.) -->
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://kioptix.github.io/synnoesis/" />
+<meta property="og:url" content="https://synnoesis.dev/" />
 <meta property="og:title" content="Synnoesis — Minds thinking together" />
 <meta property="og:description" content="A confab of minds. Multiple AI agents that confer and collaborate to solve problems as one. Open source, vendor-agnostic, bring your own keys." />
 <!-- og:image MUST be absolute — LinkedIn/X/Slack scrapers do not resolve relative
      paths, and the failure is silent: the page looks fine and the card renders blank.
-     Update this host if a custom domain is ever added. Asset: 1200x630 PNG. -->
-<meta property="og:image" content="https://kioptix.github.io/synnoesis/og-preview.png" />
+     Host must match the canonical host above; both are set by docs/CNAME. -->
+<meta property="og:image" content="https://synnoesis.dev/og-preview.png" />
 <meta name="twitter:card" content="summary_large_image" />
 
-<!-- Relative on purpose: the site is served from the /synnoesis/ subpath, so a
-     leading-slash path would resolve to the domain root and 404. -->
+<!-- Relative on purpose, and it is why this line needed no edit when the custom
+     domain landed: it resolves correctly both at kioptix.github.io/synnoesis/
+     (subpath) and at synnoesis.dev/ (root). A leading slash would have broken
+     the first. Keep local asset paths relative. -->
 <link rel="icon" type="image/png" href="favicon.png" />
 
 <!-- Fonts: intentionally NO third-party font CDN.
