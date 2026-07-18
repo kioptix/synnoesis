@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Synnoesis — Minds thinking together</title>
+<meta name="description" content="Synnoesis is a multi-agent system where independent AI agents confer, collaborate, and solve problems together. Model-agnostic, bring your own keys. Open source, Apache 2.0." />
+
+<link rel="canonical" href="https://kioptix.github.io/synnoesis/" />
+
+<!-- Open Graph / social preview (LinkedIn, X, etc.) -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://kioptix.github.io/synnoesis/" />
+<meta property="og:title" content="Synnoesis — Minds thinking together" />
+<meta property="og:description" content="A confab of minds. Multiple AI agents that confer and collaborate to solve problems as one. Open source, vendor-agnostic, bring your own keys." />
+<!-- og:image MUST be absolute — LinkedIn/X/Slack scrapers do not resolve relative
+     paths, and the failure is silent: the page looks fine and the card renders blank.
+     Update this host if a custom domain is ever added. Asset: 1200x630 PNG. -->
+<meta property="og:image" content="https://kioptix.github.io/synnoesis/og-preview.png" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<!-- Relative on purpose: the site is served from the /synnoesis/ subpath, so a
+     leading-slash path would resolve to the domain root and 404. -->
+<link rel="icon" type="image/png" href="favicon.png" />
+
+<!-- Fonts: intentionally NO third-party font CDN.
+     Google Fonts transmits every visitor's IP to Google, which a Munich court
+     held breaches GDPR without consent (legal review 2026-07-17). This page has
+     no analytics, no forms, no cookies and no external requests of any kind —
+     it renders fully offline. To restore Space Grotesk, self-host the woff2
+     files locally (SIL OFL permits it) and point --font-display at them. -->
+
+<style>
+  :root {
+    /* Synnoesis — honeycomb gold on shared dark navy base */
+    --bg:        #0A0C1A;   /* Deep Navy — shared with Kioptix */
+    --bg-panel:  #11142A;
+    --bg-card:   #161A33;
+    --gold:      #F5B729;   /* honey gold — primary accent */
+    --gold-deep: #D4920A;
+    --gold-lite: #FFD97D;
+    --indigo:    #6655E8;   /* Kioptix publisher accent — used sparingly */
+    --text:      #ECEEF7;
+    --text-dim:  #9AA0BC;
+    --border:    #232843;
+    --radius:    14px;
+    --maxw:      1080px;
+
+    /* Self-contained font stacks — no external requests (see head comment) */
+    --font-sans:    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-display: system-ui, -apple-system, 'Segoe UI Semibold', 'Segoe UI', Roboto, sans-serif;
+    --font-mono:    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .wordmark, .btn, .nav-brand {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(12px);
+    background: rgba(10, 12, 26, 0.72);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .nav-brand {
+    font-weight: 700; font-size: 1.25rem; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-brand .dot {
+    width: 22px; height: 22px;
+    background: linear-gradient(135deg, var(--gold-lite), var(--gold-deep));
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  }
+  .nav-links { display: flex; gap: 28px; align-items: center; font-size: 0.95rem; }
+  .nav-links a { color: var(--text-dim); transition: color 0.2s; }
+  .nav-links a:hover { color: var(--gold-lite); }
+  .nav-links .nav-cta {
+    color: var(--bg); background: var(--gold);
+    padding: 8px 16px; border-radius: 8px; font-weight: 600;
+  }
+  .nav-links .nav-cta:hover { color: var(--bg); background: var(--gold-lite); }
+  @media (max-width: 620px) { .nav-links a:not(.nav-cta) { display: none; } }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative;
+    padding: 90px 0 70px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .hero > * { position: relative; z-index: 1; }
+
+  /* height:auto, not 188px — logo.svg is 58.2x59.5, so forcing a square would
+     stretch it ~2%. Let the intrinsic aspect ratio decide. */
+  .honeycomb { width: 188px; height: auto; margin: 0 auto 30px; display: block; }
+  /* The agent-node pulse is NOT here — it lives inside logo.svg, because an
+     <img>-loaded SVG runs its own CSS and is unreachable from this stylesheet. */
+
+  .pron {
+    display: inline-block; font-size: 0.82rem; color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 100px;
+    padding: 4px 14px; margin-bottom: 22px; letter-spacing: 0.04em;
+  }
+  .wordmark {
+    font-size: clamp(3rem, 9vw, 5.4rem); font-weight: 700; letter-spacing: -0.03em;
+    line-height: 1; margin-bottom: 18px;
+    background: linear-gradient(120deg, var(--gold-lite) 10%, var(--gold) 45%, var(--gold-deep) 90%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: var(--gold);
+  }
+  .tagline {
+    font-family: var(--font-display);
+    font-size: clamp(1.3rem, 3.6vw, 2rem); font-weight: 500;
+    color: var(--text); margin-bottom: 16px; letter-spacing: -0.01em;
+  }
+  .subhook {
+    font-size: clamp(1rem, 2.2vw, 1.15rem); color: var(--text-dim);
+    max-width: 600px; margin: 0 auto 38px;
+  }
+  .subhook b { color: var(--gold-lite); font-weight: 600; }
+
+  /* ---------- buttons ---------- */
+  .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 13px 24px; border-radius: 10px; font-weight: 600; font-size: 1rem;
+    border: 1px solid transparent; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--gold); color: var(--bg); }
+  .btn-primary:hover { background: var(--gold-lite); transform: translateY(-2px); }
+  .btn-ghost { background: transparent; color: var(--text); border-color: var(--border); }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold-lite); transform: translateY(-2px); }
+  .btn svg { width: 18px; height: 18px; }
+
+  /* ---------- install ---------- */
+  .install { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .cmd {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 14px 11px 18px;
+    font-family: var(--font-mono); font-size: 0.9rem;
+  }
+  .cmd .prompt { color: var(--gold); }
+  .cmd code { color: var(--text); }
+  .cmd .copy {
+    background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-dim);
+    border-radius: 7px; padding: 5px 9px; cursor: pointer; font-size: 0.78rem; transition: all 0.15s;
+  }
+  .cmd .copy:hover { color: var(--gold-lite); border-color: var(--gold); }
+
+  /* ---------- sections ---------- */
+  section { padding: 76px 0; }
+  .section-label {
+    color: var(--gold); font-size: 0.82rem; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 14px; text-align: center;
+  }
+  .section-title {
+    font-size: clamp(1.8rem, 4.5vw, 2.6rem); font-weight: 700; letter-spacing: -0.02em;
+    text-align: center; margin-bottom: 14px;
+  }
+  .section-sub {
+    text-align: center; color: var(--text-dim); max-width: 620px;
+    margin: 0 auto 52px; font-size: 1.08rem;
+  }
+
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  @media (max-width: 800px) { .pillars { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 30px 26px; transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover { border-color: rgba(245,183,41,0.4); transform: translateY(-3px); }
+  .card .icon {
+    width: 44px; height: 44px; margin-bottom: 18px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, rgba(245,183,41,0.18), rgba(212,146,10,0.08));
+    border-radius: 11px; color: var(--gold);
+  }
+  .card .icon svg { width: 24px; height: 24px; }
+  .card h3 { font-size: 1.25rem; margin-bottom: 10px; letter-spacing: -0.01em; }
+  .card p { color: var(--text-dim); font-size: 0.98rem; }
+
+  /* ---------- honeycomb metaphor band ---------- */
+  .band { background: var(--bg-panel); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .band-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+  @media (max-width: 800px) { .band-inner { grid-template-columns: 1fr; gap: 32px; text-align: center; } }
+  .band h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); margin-bottom: 18px; letter-spacing: -0.02em; }
+  .band p { color: var(--text-dim); margin-bottom: 16px; font-size: 1.05rem; }
+  .band b { color: var(--gold-lite); font-weight: 600; }
+  .band-art { display: flex; justify-content: center; }
+  .band-art svg { width: 260px; height: 260px; }
+
+  /* ---------- kex ---------- */
+  .kex-inner { display: flex; align-items: center; gap: 40px; justify-content: center; flex-wrap: wrap; }
+  .kex-img {
+    width: 150px; height: 150px; border-radius: 24px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-panel));
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim); font-size: 0.8rem; text-align: center; overflow: hidden;
+  }
+  .kex-img img { width: 100%; height: 100%; object-fit: cover; }
+  .kex-text { max-width: 420px; }
+  .kex-text h3 { font-size: 1.5rem; margin-bottom: 10px; }
+  .kex-text p { color: var(--text-dim); }
+
+  /* ---------- footer ---------- */
+  footer { border-top: 1px solid var(--border); padding: 48px 0 40px; }
+  .foot-inner { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .foot-brand { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
+  .foot-meta { color: var(--text-dim); font-size: 0.9rem; }
+  .foot-meta a { color: var(--gold-lite); }
+  .badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border); border-radius: 7px; padding: 5px 11px;
+    font-size: 0.8rem; color: var(--text-dim);
+  }
+  .badge .lic { color: var(--gold); font-weight: 600; }
+  .foot-links { display: flex; gap: 22px; font-size: 0.92rem; }
+  .foot-links a { color: var(--text-dim); transition: color 0.2s; }
+  .foot-links a:hover { color: var(--gold-lite); }
+  .publisher { color: var(--text-dim); font-size: 0.85rem; margin-top: 8px; }
+  .publisher b { color: var(--indigo); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ======================= NAV ======================= -->
+<nav>
+  <div class="wrap nav-inner">
+    <div class="nav-brand"><span class="dot"></span> Synnoesis</div>
+    <div class="nav-links">
+      <a href="#what">What it is</a>
+      <a href="#hive">How it works</a>
+      <a href="https://github.com/kioptix/synnoesis" class="nav-cta">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <div class="wrap">
+
+    <!-- Hero mark: the real logo. Vector, so it stays sharp at any size and DPI.
+         Referenced via <img> rather than pasted inline ON PURPOSE — logo.svg
+         defines its own #glow and #hex ids, and inline SVGs all share ONE id
+         namespace per HTML document. Inlining would make the duplicates collide
+         and silently mis-render whichever lost. An <img> gets its own document,
+         so collision is structurally impossible rather than merely avoided.
+         Consequence: this stylesheet cannot animate the mark. The agent-node
+         pulse therefore lives INSIDE logo.svg, which works because an <img>-loaded
+         SVG still runs its own internal CSS. -->
+    <img src="logo.svg" class="honeycomb"
+         alt="Synnoesis — a hexagonal cell with five glowing agent nodes" />
+
+    <div class="pron">/ sin-no-EE-sis /</div>
+    <h1 class="wordmark">Synnoesis</h1>
+    <p class="tagline">Minds thinking together.</p>
+    <p class="subhook">A <b>confab of minds</b> — multiple AI agents that confer, collaborate, and solve problems as one. Model-agnostic. Bring your own keys. Open source.</p>
+
+    <div class="cta-row">
+      <a href="https://github.com/kioptix/synnoesis" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.36 1.09 2.93.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.6 9.6 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+
+    <!-- ============ INSTALL BLOCKS — TEMPORARILY REMOVED (2026-07-18) ============
+         Removed the npm/PyPI CTA buttons AND both install commands on legal review.
+         Reason (verified against both registries): `synnoesis` EXISTS on npm and
+         PyPI, but only at v0.0.1 (published 2026-06-13). The shipped release is
+         v0.2.0. So the commands did NOT fail — they SUCCEEDED and silently
+         installed a namespace placeholder that is not the product this page
+         describes. A silent wrong-install is worse than an error: the user gets
+         no signal, just software that doesn't match the page.
+         RESTORE once v0.2.0+ is ACTUALLY PUBLISHED to both registries (not merely
+         tagged on GitHub) — at that point the commands become true and they're
+         good conversion, so they should go back. Also update the registry package
+         descriptions then; both still carry the old personal-assistant positioning.
+         The .install / .cmd / .copy CSS is retained so this is a paste-back.
+    ========================================================================= -->
+
+  </div>
+</header>
+
+<!-- ======================= WHAT IT IS ======================= -->
+<section id="what">
+  <div class="wrap">
+    <div class="section-label">What it is</div>
+    <h2 class="section-title">Many minds, one mesh</h2>
+    <p class="section-sub">Synnoesis orchestrates independent AI agents that talk to each other — debating, dividing work, and converging on answers no single model reaches alone.</p>
+    <div class="pillars">
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 7l3 3m7-3l-3 3m-4 4l-3 3m10-3l-3 3"/></svg></div>
+        <h3>A confab of minds</h3>
+        <p>Agents confer and collaborate — proposing, challenging, and refining — so the collective solves what a lone model can't.</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 3-3 3-3-3z"/><path d="M21 12l-3 3-3-3 3-3z"/><path d="M12 22l-3-3 3-3 3 3z"/><path d="M3 12l3-3 3 3-3 3z"/></svg></div>
+        <h3>Bring your own keys</h3>
+        <p>Model-agnostic by design. Tested with Claude, OpenRouter, and Grok — your credentials, your control. No lock-in.</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>Vendor-agnostic, no lock-in</h3>
+        <p>Swap providers freely. If one model goes dark, route to another — no rewrite, no vendor lock-in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= HONEYCOMB METAPHOR ======================= -->
+<div class="band" id="hive">
+  <div class="wrap band-inner">
+    <div class="band-text">
+      <h2>Like bees building a comb</h2>
+      <p>There's no central architect. Each agent is a <b>bee</b>; the solution is the <b>comb</b> — a structure that emerges from many minds working in concert.</p>
+      <p>Add an agent and the hive grows. Remove one and it adapts. The intelligence isn't in any single cell — it's in the <b>collaboration between them.</b></p>
+      <p>That's Synnoesis: emergent intelligence from collective work.</p>
+    </div>
+    <div class="band-art">
+      <svg viewBox="-130 -130 260 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="hg2" x1="0" y1="-1" x2="0" y2="1">
+            <stop offset="0" stop-color="#FFD97D"/><stop offset="1" stop-color="#D4920A"/>
+          </linearGradient>
+          <!-- #hex used to live in the hero SVG's defs and was reached across the
+               document by the <use> calls below. Moved here so this section owns
+               what it draws — deleting or swapping another SVG can no longer
+               silently blank it. -->
+          <polygon id="hex" points="40,0 20,34.6 -20,34.6 -40,0 -20,-34.6 20,-34.6"/>
+        </defs>
+        <g stroke="url(#hg2)" stroke-width="4" stroke-linejoin="round" fill="rgba(245,183,41,0.06)">
+          <use href="#hex" transform="translate(0,0) scale(0.95)"/>
+          <use href="#hex" transform="translate(60,34.6) scale(0.95)"/>
+          <use href="#hex" transform="translate(0,69.3) scale(0.95)"/>
+          <use href="#hex" transform="translate(-60,34.6) scale(0.95)"/>
+          <use href="#hex" transform="translate(-60,-34.6) scale(0.95)"/>
+          <use href="#hex" transform="translate(0,-69.3) scale(0.95)"/>
+          <use href="#hex" transform="translate(60,-34.6) scale(0.95)"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= FOOTER ======================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-inner">
+      <div>
+        <div class="foot-brand">Synnoesis</div>
+        <div class="publisher">Published by <b>Groupe Kioptix Inc.</b></div>
+      </div>
+      <div class="foot-links">
+        <!-- npm/PyPI links removed 2026-07-18 — see install-block note in the hero;
+             restore alongside the install commands.
+             "Docs" points at the repo README — for an early-stage project that IS
+             the documentation. Repoint if a real docs site ships. -->
+        <a href="https://github.com/kioptix/synnoesis">GitHub</a>
+        <a href="https://github.com/kioptix/synnoesis#readme">Docs</a>
+      </div>
+      <span class="badge">License <span class="lic">Apache&nbsp;2.0</span></span>
+    </div>
+    <div class="foot-meta" style="margin-top:24px; text-align:center;">
+      © 2026 Groupe Kioptix Inc. · Synnoesis and KeX are trademarks of Groupe Kioptix Inc.
+    </div>
+    <div class="foot-meta" style="margin-top:14px; text-align:center; font-size:0.78rem; line-height:1.7; opacity:0.85;">
+      Synnoesis is an independent open-source project. It is not affiliated with, endorsed by,
+      or sponsored by Anthropic, xAI, OpenRouter, or any model provider.
+      Claude is a trademark of Anthropic, PBC. Grok is a trademark of X.AI LLC.
+      All other trademarks are the property of their respective owners.
+      Synnoesis is provided &ldquo;as is&rdquo; under the Apache License 2.0, without warranties of any kind.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

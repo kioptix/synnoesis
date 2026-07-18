@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="220"
+   height="225"
+   viewBox="-2 -2 58.208329 59.531245"
+   version="1.1"
+   id="svg1"
+   xml:space="preserve"
+   sodipodi:docname="logo.svg"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   inkscape:export-filename="favicon.png"
+   inkscape:export-xdpi="14.401729"
+   inkscape:export-ydpi="14.401729"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"><title
+     id="title1">Synnoesis honeycomb mark</title><sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="true"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:zoom="2"
+     inkscape:cx="36.5"
+     inkscape:cy="-13"
+     inkscape:window-width="2270"
+     inkscape:window-height="1360"
+     inkscape:window-x="2825"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1" /><defs
+     id="defs1"><linearGradient
+       id="linearGradient138"
+       inkscape:collect="always"><stop
+         style="stop-color:#ffd97d;stop-opacity:1;"
+         offset="0"
+         id="stop138" /><stop
+         style="stop-color:#d4920a;stop-opacity:1;"
+         offset="1"
+         id="stop139" /></linearGradient><linearGradient
+       id="linearGradient135"
+       inkscape:collect="always"><stop
+         style="stop-color:#ffd97d;stop-opacity:1;"
+         offset="0"
+         id="stop135" /><stop
+         style="stop-color:#d4920a;stop-opacity:1;"
+         offset="1"
+         id="stop136" /></linearGradient><linearGradient
+       id="goldGradient"
+       x1="0"
+       y1="-1"
+       x2="0"
+       y2="1"><stop
+         offset="0"
+         stop-color="#FFD97D"
+         id="stop1" /><stop
+         offset="1"
+         stop-color="#D4920A"
+         id="stop2" /></linearGradient><filter
+       id="glow"
+       x="-0.060000002"
+       y="-0.052387446"
+       width="1.12"
+       height="1.104775"><feGaussianBlur
+         stdDeviation="3.2"
+         result="blur"
+         id="feGaussianBlur2" /><feMerge
+         id="feMerge3"><feMergeNode
+           in="blur"
+           id="feMergeNode2" /><feMergeNode
+           in="SourceGraphic"
+           id="feMergeNode3" /></feMerge></filter><polygon
+       id="hex"
+       points="40,0 20,34.6 -20,34.6 -40,0 -20,-34.6 20,-34.6 " /><linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient135"
+       id="linearGradient136"
+       x1="24.989021"
+       y1="-48.48526"
+       x2="24.989023"
+       y2="79.747925"
+       gradientUnits="userSpaceOnUse" /><linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient138"
+       id="linearGradient139"
+       x1="25.115236"
+       y1="-47.289177"
+       x2="25.115236"
+       y2="78.551842"
+       gradientUnits="userSpaceOnUse" /></defs><style type="text/css"><![CDATA[
+    /* Agent-node pulse. Lives INSIDE this file on purpose: the page loads this
+       SVG via <img>, and an <img>-loaded SVG runs its own internal CSS but is
+       unreachable from the parent document's stylesheet.
+       Targets circles positionally, not by id, so Inkscape regenerating ids
+       does not break it. NOTE: a re-export from Inkscape will drop this block
+       unless it was added through Inkscape's own XML editor. */
+    @keyframes syn-pulse { 0%, 100% { opacity: 0.55 } 50% { opacity: 1 } }
+    circle { animation: syn-pulse 2.6s ease-in-out infinite }
+    circle:nth-of-type(2) { animation-delay: 0.5s }
+    circle:nth-of-type(3) { animation-delay: 1.0s }
+    circle:nth-of-type(4) { animation-delay: 1.5s }
+    circle:nth-of-type(5) { animation-delay: 0.8s }
+    /* Respect vestibular-disorder settings — no motion if the OS asks for none. */
+    @media (prefers-reduced-motion: reduce) { circle { animation: none } }
+  ]]></style><g
+     inkscape:groupmode="layer"
+     id="layer4"
+     inkscape:label="artwork"
+     transform="translate(-36.380257,-35.343389)"><path
+       id="path11-52-2-6-1"
+       style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;fill:url(#linearGradient139);fill-rule:nonzero;stroke:url(#linearGradient136);stroke-width:0.999947;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;paint-order:stroke fill markers;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+       transform="matrix(0.43446877,0,0,0.43446877,52.588375,56.698986)"
+       d="m 12.935547,35.179687 a 1.5226072,1.5226072 0 0 0 -1.318359,0.759766 L -0.5625,57.035156 a 1.5226072,1.5226072 0 0 0 0,1.523438 l 12.179688,21.095703 a 1.5226072,1.5226072 0 0 0 1.318359,0.761719 h 24.359375 a 1.5226072,1.5226072 0 0 0 1.318359,-0.761719 L 50.792969,58.558594 a 1.5226072,1.5226072 0 0 0 0,-1.523438 L 38.613281,35.939453 a 1.5226072,1.5226072 0 0 0 -1.318359,-0.759766 z m 0.878906,3.044922 H 36.416016 L 47.716797,57.796875 36.416016,77.371094 H 13.814453 L 2.5136719,57.796875 Z M 49.474417,14.13135 a 1.5226072,1.5226072 0 0 0 -1.318359,0.759766 L 35.97637,35.986819 a 1.5226072,1.5226072 0 0 0 0,1.523438 L 48.156058,58.60596 a 1.5226072,1.5226072 0 0 0 1.318359,0.761719 H 73.833792 A 1.5226072,1.5226072 0 0 0 75.152151,58.60596 L 87.331839,37.510257 a 1.5226072,1.5226072 0 0 0 0,-1.523438 L 75.152151,14.891116 A 1.5226072,1.5226072 0 0 0 73.833792,14.13135 Z m 0.878906,3.044922 H 72.954886 L 84.255667,36.748538 72.954886,56.322757 H 50.353323 L 39.052542,36.748538 Z m -73.956646,-45.234527 a 1.5226072,1.5226072 0 0 0 -1.318359,0.759766 L -37.10137,-6.2027863 a 1.5226072,1.5226072 0 0 0 0,1.523438 l 12.179688,21.0957033 a 1.5226072,1.5226072 0 0 0 1.318359,0.761719 H 0.75605178 A 1.5226072,1.5226072 0 0 0 2.0744108,16.416355 L 14.254099,-4.6793483 a 1.5226072,1.5226072 0 0 0 0,-1.523438 L 2.0744108,-27.298489 a 1.5226072,1.5226072 0 0 0 -1.31835902,-0.759766 z m 0.878906,3.044922 H -0.12285422 L 11.177927,-5.4410673 -0.12285422,14.133152 H -22.724417 L -34.025198,-5.4410673 Z m -0.878906,39.144683 a 1.5226072,1.5226072 0 0 0 -1.318359,0.759766 L -37.10137,35.986819 a 1.5226072,1.5226072 0 0 0 0,1.523438 l 12.179688,21.095703 a 1.5226072,1.5226072 0 0 0 1.318359,0.761719 H 0.75605178 A 1.5226072,1.5226072 0 0 0 2.0744108,58.60596 L 14.254099,37.510257 a 1.5226072,1.5226072 0 0 0 0,-1.523438 L 2.0744108,14.891116 A 1.5226072,1.5226072 0 0 0 0.75605178,14.13135 Z m 0.878906,3.044922 H -0.12285422 L 11.177927,36.748538 -0.12285422,56.322757 H -22.724417 L -34.025198,36.748538 Z m 72.198834,-45.234518 a 1.5226072,1.5226072 0 0 0 -1.318359,0.759766 L 35.97637,-6.2027771 a 1.5226072,1.5226072 0 0 0 0,1.523438 L 48.156058,16.416364 a 1.5226072,1.5226072 0 0 0 1.318359,0.761719 h 24.359375 a 1.5226072,1.5226072 0 0 0 1.318359,-0.761719 L 87.331839,-4.6793391 a 1.5226072,1.5226072 0 0 0 0,-1.523438 L 75.152151,-27.29848 a 1.5226072,1.5226072 0 0 0 -1.318359,-0.759766 z m 0.878906,3.044922 H 72.954886 L 84.255667,-5.4410581 72.954886,14.133161 H 50.353323 L 39.052542,-5.4410581 Z M 12.935547,-49.153353 a 1.5226072,1.5226072 0 0 0 -1.318359,0.759766 L -0.5625,-27.297884 a 1.5226072,1.5226072 0 0 0 0,1.523438 l 12.179688,21.0957034 a 1.5226072,1.5226072 0 0 0 1.318359,0.761719 h 24.359375 a 1.5226072,1.5226072 0 0 0 1.318359,-0.761719 L 50.792969,-25.774446 a 1.5226072,1.5226072 0 0 0 0,-1.523438 L 38.613281,-48.393587 a 1.5226072,1.5226072 0 0 0 -1.318359,-0.759766 z m 0.878906,3.044922 H 36.416016 L 47.716797,-26.536165 36.416016,-6.9619456 H 13.814453 L 2.5136719,-26.536165 Z m -0.878906,39.1452938 a 1.5226072,1.5226072 0 0 0 -1.318359,0.759766 L -0.5625,14.892332 a 1.5226072,1.5226072 0 0 0 0,1.523438 l 12.179688,21.095703 a 1.5226072,1.5226072 0 0 0 1.318359,0.761719 h 24.359375 a 1.5226072,1.5226072 0 0 0 1.318359,-0.761719 L 50.792969,16.41577 a 1.5226072,1.5226072 0 0 0 0,-1.523438 L 38.613281,-6.2033712 a 1.5226072,1.5226072 0 0 0 -1.318359,-0.759766 z m 0.878906,3.044922 H 36.416016 L 47.716797,15.654051 36.416016,35.22827 H 13.814453 L 2.5136719,15.654051 Z" /><circle
+       style="opacity:0.3;fill:#ffd97d;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.551632;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="path139"
+       cx="63.499992"
+       cy="63.499992"
+       r="1.3229165" /><circle
+       style="opacity:0.3;fill:#ffd97d;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.441306;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="path139-1"
+       cx="63.499996"
+       cy="82.020828"
+       r="1.0583333" /><circle
+       style="opacity:0.3;fill:#ffd97d;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.441306;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="path139-2"
+       cx="63.499996"
+       cy="44.979164"
+       r="1.0583333" /><circle
+       style="opacity:0.3;fill:#ffd97d;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.441306;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="path139-2-2"
+       cx="47.624996"
+       cy="73.024994"
+       r="1.0583333" /><circle
+       style="opacity:0.3;fill:#ffd97d;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.441306;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="path139-2-1"
+       cx="79.374992"
+       cy="54.239578"
+       r="1.0583333" /></g><metadata
+     id="metadata1"><rdf:RDF><cc:Work
+         rdf:about=""><dc:title>Synnoesis honeycomb mark</dc:title><dc:date>2026-07-18</dc:date><dc:rights><cc:Agent><dc:title>Groupe Kioptix Inc.</dc:title></cc:Agent></dc:rights><dc:publisher><cc:Agent><dc:title>Groupe Kioptix Inc.</dc:title></cc:Agent></dc:publisher><dc:subject><rdf:Bag><rdf:li>synnoesis</rdf:li><rdf:li>logo</rdf:li><rdf:li>trademark</rdf:li></rdf:Bag></dc:subject><dc:creator><cc:Agent><dc:title>Richer Dinelle</dc:title></cc:Agent></dc:creator></cc:Work></rdf:RDF></metadata></svg>
