@@ -10,6 +10,69 @@ part held stable; transports underneath it may evolve.
 
 ## [Unreleased]
 
+## [0.4.0] — cross-machine transport (MQTT)
+
+The file-transport floor (same machine, shared filesystem) has always been the
+default; this release adds the **ceiling**: an MQTT broker so two machines can
+exchange the SAME signed messages. The design bet from v0.1.0 pays off — the broker
+is a *second writer* under the frozen contract, so ``read`` is unchanged and a
+broker-delivered record is field-identical to a file record by construction.
+
+The floor is untouched: with ``SYN_BROKER`` unset, behavior is byte-for-byte
+identical to v0.3.0, and the MQTT client (``paho-mqtt``) is an **optional** extra —
+a single-machine install stays dependency-free.
+
+### Fixed
+
+- **Packaging: the built artifacts did not contain the implementation.**
+  `packages = ["synnoesis"]` shipped three files; the entire `comms/` floor (11
+  modules) was absent from both the wheel and the sdist. A `pip install synnoesis`
+  produced a CLI where every real subcommand raised `ImportError` — `--help` still
+  worked, which is why it went unnoticed. `comms/` is now mapped into the package
+  namespace via `package-dir`, and `cli.py` resolves the installed layout first.
+
+  This is a **latent defect that predates this release**, not a v0.4.0 regression:
+  `v0.3.0`'s `pyproject.toml` is identical. It never reached a user — only the
+  `0.0.1` name-reservation placeholder was ever published.
+
+### Added
+- ``synnoesis listen`` — the cross-machine RECEIVER bridge. Subscribes
+  ``agent/<me>/inbox`` on the broker, **re-verifies each message against THIS
+  machine's keyring** (never trusting the broker or a sender's self-reported
+  verdict), and appends the same on-disk inbox record ``read`` already understands.
+  It is the trust boundary the ``inbox.py`` security invariant calls for.
+- ``send`` MQTT path — publishes the signed inner envelope **verbatim** to the
+  broker when ``SYN_BROKER`` is set. ``--local`` forces the file transport;
+  ``--via {auto,file,mqtt}`` selects explicitly (``mqtt`` errors rather than
+  silently falling back). Every broker send **announces its transport**, so an
+  auto-selected network egress is never silent.
+- Opt-in dependency extras: ``signing`` (``cryptography``), ``mqtt`` (``paho-mqtt>=2.0``
+  **+ ``cryptography``** — cross-machine bundles signing, since verifying a message
+  received over an untrusted broker is the whole point), and ``all``. The bare install
+  stays dependency-free.
+- ``doctor`` now reports broker config, transport-security posture, reachability,
+  auth, and paho availability.
+- New environment surface (all ``SYN_*``): ``SYN_BROKER``, ``SYN_BROKER_TLS_CA``,
+  ``SYN_BROKER_USER``, ``SYN_BROKER_PASSFILE``, ``SYN_ALLOW_PLAINTEXT``,
+  ``SYN_MAX_AGE_SEC``.
+
+### Security
+- **Fail-closed off-box:** a non-loopback broker without TLS is **refused** unless
+  ``SYN_ALLOW_PLAINTEXT=1`` is explicitly set — and even then it **warns on every
+  connect**. TLS (``SYN_BROKER_TLS_CA``) verifies the broker certificate; there is
+  deliberately no skip-verify option.
+- **Replay defense:** a bounded seen-nonce cache drops qos1 duplicates and in-window
+  replays; a signed-``_at`` freshness check (``SYN_MAX_AGE_SEC``, default 300s; an
+  attacker cannot forge a fresh timestamp) drops replays beyond the window. The bound
+  is honest — "no replay older than N", not "replay-proof".
+- **No secrets in argv:** the broker password is read from a file
+  (``SYN_BROKER_PASSFILE``), never a command-line flag.
+- **Signing is not encryption (stated plainly):** messages are signed (authenticity +
+  integrity) and TLS protects them in transit, but they are **not end-to-end
+  encrypted — the broker sees message content.** End-to-end confidentiality is a
+  non-goal of this release (the signature tag registry reserves
+  ``synnoesis/v2/encmsg`` for a future encrypted envelope).
+
 ## [0.3.0] — key-distribution floor hardening
 
 A minor release hardening the key-distribution UX on the existing Ed25519 + JSON

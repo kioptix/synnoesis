@@ -36,6 +36,14 @@ call.
 Everything else is the Python standard library. The floor has **no broker and
 no container** to install.
 
+> **Going cross-machine ([§6](#6-cross-machine-mqtt-v040)) needs two more things**,
+> and neither arrives with `pip`:
+> - **A reachable MQTT broker** that you supply. Synnoesis ships none — `mosquitto`
+>   is a one-liner on every OS and needs no Docker ([§6.1](#61-install-a-broker-bring-your-own-we-ship-none)).
+> - **`cryptography` becomes mandatory**, not optional. Off-box, verifying a message
+>   that crossed an untrusted broker *is* the feature, so the "just skip it" advice
+>   above stops applying ([§6.2](#62-install-the-cross-machine-dependencies)).
+
 ---
 
 ## 3. Setup
@@ -160,7 +168,7 @@ You'll see the message, something like:
 
 ```
 # bob inbox — last 2h, 1 item(s)
-  [14:32 EDT] alice (urg=normal, age=0m): hello from alice
+  [14:32 UTC] alice (urg=normal, age=0m): hello from alice
 ```
 
 That round trip — A writes, B reads it back — is the mesh working. Reply the
@@ -200,7 +208,7 @@ With **no keys set up**, the mesh runs in **warn mode**: messages are delivered,
 but the reader can't prove who actually sent them, so every message is tagged:
 
 ```
-  [14:32 EDT] alice [!UNVERIFIED] (urg=normal, age=0m): hello from alice
+  [14:32 UTC] alice [!UNVERIFIED] (urg=normal, age=0m): hello from alice
 ```
 
 `[!UNVERIFIED]` means "the `alice` in this line is a *claim* the sender wrote,
@@ -283,14 +291,179 @@ exit contract. Unset the variable (or set it empty) to return to warn mode.
 
 ---
 
-## 6. Cross-machine — planned for a future release
+## 6. Cross-machine (MQTT) — v0.4.0
 
-The floor above keeps every agent on **one machine** sharing one `state/`
-directory. Putting agents on **different machines** is planned for a future
-release: a small **OS-agnostic, Python-based broker** that relays inbox records
-between hosts — **no Docker required**, the same `send` / `inbox` commands you
-already learned, just with the broker carrying messages across the network
-instead of the local filesystem.
+The floor keeps every agent on **one machine** sharing one `state/` directory.
+To put agents on **different machines**, Synnoesis speaks MQTT: `send` publishes
+to a broker, and a small `listen` bridge on each recipient machine receives the
+message, **verifies it locally**, and writes the same inbox record `read` already
+understands. The commands you learned don't change — the broker just carries
+messages across the network instead of the local filesystem.
 
-Until then, the single-machine floor is the supported path — and it's enough to
-build and watch a real multi-agent collaboration.
+> **Read this first — what the broker does and does not protect.** Synnoesis
+> **signs** messages (authenticity + integrity) and, with TLS, encrypts them **in
+> transit**. It does **not** end-to-end encrypt message *content*, so **the broker
+> can read your messages.** A malicious broker cannot forge or tamper (the
+> signature stops that — at worst it can drop/withhold), but it sees plaintext
+> bodies. Don't send a broker content you wouldn't show its operator. End-to-end
+> content encryption is a future release.
+
+### 6.1 Install a broker (bring your own — we ship none)
+
+Synnoesis is transport-only; use any MQTT broker. **Mosquitto** is a one-liner on
+every OS and needs no Docker:
+
+```bash
+brew install mosquitto        # macOS
+sudo apt install mosquitto    # Debian/Ubuntu
+# Windows: the Eclipse Mosquitto installer from mosquitto.org
+```
+
+A container is optional if you prefer one — an example `compose/docker-compose.yml`
+(pinned `eclipse-mosquitto`) is provided. For anything beyond a loopback test,
+configure the broker with **TLS and a username/password** (see the Mosquitto docs);
+Synnoesis refuses an unencrypted off-box connection by default (§6.5).
+
+### 6.2 Install the cross-machine dependencies
+
+Cross-machine needs two things: the broker client (`paho-mqtt`) **and** message signing
+(`cryptography`) — because locally verifying a message that arrived over an *untrusted*
+broker is the whole point of going cross-machine. The `mqtt` extra bundles both, so from
+your checkout (a clone or this branch) the one-command install is:
+
+```bash
+pip install -e ".[mqtt]"     # paho-mqtt + cryptography, into your checkout
+```
+
+Prefer not to install the package? Install the two deps directly — the
+`python synnoesis.py` run-from-clone path keeps working:
+
+```bash
+pip install "paho-mqtt>=2.0" cryptography
+```
+
+> `pip install "synnoesis[mqtt]"` (without `-e .`) also works, but only once a release is
+> published to PyPI. When you're on a **checkout** (a clone or this branch), use one of the
+> two commands above — the bare form would pull the last *published* version from PyPI, not
+> your local code.
+
+#### If `cryptography` starts building from source
+
+Elsewhere in this guide, a failed `cryptography` build is something you can simply skip —
+the floor runs fine without signing. **Here you cannot.** Verifying a message that arrived
+over an untrusted broker *is* the feature; without `cryptography` there is no cross-machine
+story worth having. So if pip starts compiling it (Rust toolchain, OpenSSL headers, a long
+wait, often an error), that has to be solved rather than skipped.
+
+Almost always this means **pip found no prebuilt wheel for your platform and fell back to
+the source distribution.** The usual causes, in order of likelihood:
+
+| cause | check | fix |
+|---|---|---|
+| **Intel macOS.** `cryptography` 49 dropped the `macosx_10_9_universal2` wheel (Intel + ARM) and now ships `macosx_11_0_arm64` only — so on an Intel Mac there is **no wheel at all** | `python -c "import platform; print(platform.machine())"` → `x86_64` | `pip install "cryptography<49"` **in your environment** (see the note below), or use an arm64-native Python if the hardware allows |
+| **A Rosetta/x86_64 Python on Apple Silicon** — same effect as above, self-inflicted | as above; `arm64` is what you want | reinstall Python as native arm64, then retry |
+| **32-bit Windows.** 49 also dropped the `win32` wheel; only `win_amd64` remains | `python -c "import platform; print(platform.machine())"` | use a 64-bit Python |
+| **An old `pip`** that doesn't understand current wheel tags | `pip --version`; `pip debug --verbose` lists the tags it accepts | `python -m pip install --upgrade pip`, then retry |
+
+To confirm it is a *wheel-availability* problem and not something else, force pip to refuse
+source builds — it will then say plainly that no distribution matches:
+
+```bash
+pip install --only-binary :all: cryptography
+```
+
+> **Why Synnoesis does not simply pin `cryptography<49` for you.** `cryptography` is a
+> security dependency. An upper bound in *our* package metadata would freeze **every**
+> user's crypto library at a known point and quietly withhold future security fixes — to
+> accommodate one platform that upstream chose to stop building for. That is the wrong
+> trade for a project whose entire premise is verifiable messages. The constraint belongs
+> in the environment that needs it, not in the contract everyone inherits.
+>
+> This applies to the `signing` extra too, not just `mqtt` — both pull `cryptography`.
+
+### 6.3 Trust genesis is out-of-band — NOT over the broker
+
+Cross-machine signing uses the **same keys and fingerprints** from [§5](#5-trust-model),
+with one rule the broker makes essential: **the broker moves messages, it can never
+vouch for identity.** Establish trust *before* you connect, out-of-band.
+
+On each machine, generate that agent's keypair (private key never leaves the box)
+and read its fingerprint:
+
+```bash
+python synnoesis.py keygen --agent-id alice        # on alice's machine
+python synnoesis.py fingerprint --agent-id alice   # prints synnoesis-fp:<hash>
+```
+
+Exchange **public keys** over a channel you already trust (in person, an existing
+secure chat, `scp`) — **never** by pasting them through the broker or any automated
+mesh channel. Then pin the peer's key **and verify its fingerprint matches** what
+the peer read to you out-of-band:
+
+```bash
+# on bob's machine, pinning alice — compare the fingerprint by voice/secure channel first
+python synnoesis.py keyring --add alice --pubkey <alice pubkey> \
+    --expect-fingerprint synnoesis-fp:<alice fingerprint>
+```
+
+`--expect-fingerprint` refuses the add on a mismatch, mechanizing the out-of-band
+check. Do the mirror on alice's machine for bob. Now each side cryptographically
+trusts the other, established by a human — not by the network.
+
+### 6.4 Point at the broker, run `listen`, and send
+
+On **every machine**, set the broker address (and, off-loopback, TLS + auth):
+
+```bash
+export SYN_BROKER=broker.example.net:8883          # host[:port]
+export SYN_BROKER_TLS_CA=/path/to/ca.pem           # TLS: verify the broker cert
+export SYN_BROKER_USER=alice                        # broker username
+export SYN_BROKER_PASSFILE=/path/to/broker.pass     # password from a file, never argv
+```
+
+On **bob's** machine, start the receiver bridge (foreground; leave it running):
+
+```bash
+python synnoesis.py listen --agent-id bob
+# → listening as 'bob' on broker.example.net [agent/bob/inbox] …
+```
+
+From **alice's** machine, send exactly as before — with `SYN_BROKER` set, `send`
+takes the broker automatically and announces it:
+
+```bash
+python synnoesis.py send --to bob "hello across the network"
+# → via broker broker.example.net:8883 (TLS)  [--local for the file transport]
+# published -> agent/bob/inbox  (normal from alice)
+```
+
+On bob's machine, `listen` prints that it appended the record, and `read` shows it —
+verified, because bob's bridge re-checked alice's signature against **bob's own**
+keyring:
+
+```bash
+python synnoesis.py read --agent-id bob
+#   [.. ] alice (urg=normal, age=0m): hello across the network
+```
+
+`--local` still forces the file transport on a shared-filesystem host; `--via mqtt`
+forces the broker and errors (rather than silently using a file) if `SYN_BROKER`
+is unset. Run `python synnoesis.py doctor` on either machine to see the resolved
+broker, transport-security posture, and reachability.
+
+### 6.5 Security defaults (and how to relax them, carefully)
+
+- **Off-box plaintext is refused.** With no `SYN_BROKER_TLS_CA` and a non-loopback
+  broker, `send`/`listen` refuse to connect. On a **trusted encrypted underlay**
+  (WireGuard / a tailnet) you may set `SYN_ALLOW_PLAINTEXT=1` — it connects but
+  **warns on every connection**. Prefer real TLS.
+- **Enforce signatures cross-machine.** Set `SYN_ENFORCE_SIGNING=1` (§5a) on the
+  receiving side so `listen` delivers **only** messages that verify against your
+  keyring — strongly recommended once your peers' keys are pinned.
+- **Replay defense.** `listen` drops duplicate and stale messages: a signed
+  timestamp older than `SYN_MAX_AGE_SEC` (default 300s) is rejected as a replay.
+  If your machines' clocks can't be kept within that window, raise it or set
+  `SYN_MAX_AGE_SEC=0` to disable the freshness check (dedup of duplicates stays on).
+
+Supervising `listen` as a background service (systemd / launchd / a Windows
+scheduled task) is up to you — v0.4.0 ships it as a foreground process on purpose.

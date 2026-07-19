@@ -1,0 +1,33 @@
+# Optional Mosquitto broker for the Synnoesis cross-machine transport (v0.4.0).
+#
+# Synnoesis ships NO broker — this is a convenience for people who prefer a
+# container over a native `brew/apt install mosquitto`. Either works; the mesh only
+# needs *a* reachable MQTT broker.
+#
+#   docker compose -f compose/docker-compose.yml up -d
+#
+# Then, on each machine, set SYN_BROKER to this broker's host:port (see
+# docs/quickstart.md §6).
+#
+# ⚠️ SECURITY: the mounted mosquitto.conf below (from mosquitto.conf.example) is a
+# LOOPBACK-ONLY QUICK-TEST config — anonymous, plaintext, bound to localhost. That
+# is fine for trying two agents on one host, and Synnoesis still SIGNS every message.
+# For anything off-box, edit the config to require a password_file AND TLS (the
+# example file shows the production shape), and expose the TLS port instead.
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: synnoesis-mosquitto
+    restart: unless-stopped
+    ports:
+      # Quick-test plaintext listener. For off-box use, switch to 8883 (TLS) after
+      # configuring certs + auth in the mounted config.
+      - "127.0.0.1:1883:1883"
+    volumes:
+      - ./mosquitto.conf.example:/mosquitto/config/mosquitto.conf:ro
+      - synnoesis-mosquitto-data:/mosquitto/data
+      - synnoesis-mosquitto-log:/mosquitto/log
+
+volumes:
+  synnoesis-mosquitto-data:
+  synnoesis-mosquitto-log:

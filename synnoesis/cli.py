@@ -16,9 +16,20 @@ from pathlib import Path
 
 
 def _floor_dir() -> Path:
-    """Resolve the comms/ floor dir. Under both the zero-install checkout and the
-    b2 editable install, the floor sits at <repo>/comms beside synnoesis/."""
-    return Path(__file__).resolve().parent.parent / "comms"
+    """Resolve the comms/ floor dir, checking the INSTALLED layout first.
+
+    Wheel/sdist install -> <site-packages>/synnoesis/comms (packaged via
+    package-dir). Checkout and editable install -> <repo>/comms, beside
+    synnoesis/. Ordered installed-first because a checkout has no
+    synnoesis/comms, so the fallback is unambiguous either way.
+
+    pathlib only, no separator or drive assumptions -- this function is the one
+    most likely to diverge across platforms and is untested off Windows."""
+    here = Path(__file__).resolve().parent
+    installed = here / "comms"
+    if installed.is_dir():
+        return installed
+    return here.parent / "comms"
 
 
 def main(argv=None) -> int:
@@ -26,7 +37,7 @@ def main(argv=None) -> int:
     sys.path.insert(0, str(_floor_dir()))     # ONE bootstrap, here only
     if not argv or argv[0] in ("-h", "--help"):
         print("usage: synnoesis "
-              "{send|read|keygen|keyring|fingerprint|doctor} [args...]")
+              "{send|read|listen|keygen|keyring|fingerprint|doctor} [args...]")
         return 0 if argv else 2
     sub, rest = argv[0], argv[1:]
     if sub == "send":
@@ -35,6 +46,9 @@ def main(argv=None) -> int:
     if sub in ("read", "inbox"):
         import inbox
         return inbox.main(rest)
+    if sub == "listen":
+        import listen
+        return listen.main(rest)
     if sub == "keygen":
         import keygen
         return keygen.main(rest)
@@ -48,7 +62,7 @@ def main(argv=None) -> int:
         import doctor
         return doctor.main(rest)
     print(f"unknown subcommand {sub!r}; expected "
-          "send|read|keygen|keyring|fingerprint|doctor", file=sys.stderr)
+          "send|read|listen|keygen|keyring|fingerprint|doctor", file=sys.stderr)
     return 2
 
 

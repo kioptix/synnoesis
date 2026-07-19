@@ -23,6 +23,52 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import paths  # noqa: E402  — portable data-home resolver
 import sign   # noqa: E402  — key dir / keyring / crypto availability
+import mqtt as mq  # noqa: E402  — broker config + security posture (v0.4.0)
+
+
+def _probe(host: str, port: int, timeout: float) -> str:
+    """Best-effort TCP reachability of the broker (connect only, no data). Never
+    raises; a diagnostic must not hang or crash on an unreachable broker."""
+    import socket
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return "yes (TCP connect ok)"
+    except Exception as e:  # noqa: BLE001
+        return f"no ({type(e).__name__})"
+
+
+def _broker_section() -> None:
+    """Print the cross-machine transport diagnostics (v0.4.0). Uses only the pure
+    config/security helpers plus a short, non-fatal reachability probe."""
+    cfg = mq.resolve_broker()
+    if cfg is None:
+        print("  broker       : (unset) — file transport only; "
+              "set SYN_BROKER=host[:port] for cross-machine")
+        return
+    where = ("TLS" if cfg.use_tls else
+             "loopback plaintext" if cfg.is_loopback else "PLAINTEXT")
+    print(f"  broker       : {cfg.host}:{cfg.port}  ({where})")
+    try:
+        mq.check_transport_security(cfg, warn=lambda _m: None)
+        posture = ("TLS-encrypted in transit" if cfg.use_tls else
+                   "loopback (ok)" if cfg.is_loopback else
+                   "plaintext ALLOWED (SYN_ALLOW_PLAINTEXT) — warns every connect")
+    except mq.SynBrokerError:
+        posture = ("REFUSED — off-box plaintext without TLS; set SYN_BROKER_TLS_CA "
+                   "or SYN_ALLOW_PLAINTEXT")
+    print(f"  transport sec: {posture}")
+    print("  confidential.: NOT end-to-end encrypted — the broker sees message "
+          "content (Synnoesis signs, it does not encrypt)")
+    if cfg.user:
+        print(f"  broker auth  : user={cfg.user}, passfile={cfg.passfile or '(none)'}")
+    else:
+        print("  broker auth  : (none)")
+    try:
+        mq.require_paho()
+        print("  paho-mqtt    : available")
+    except mq.SynBrokerError:
+        print("  paho-mqtt    : MISSING — `pip install synnoesis[mqtt]` to use the broker")
+    print(f"  reachable    : {_probe(cfg.host, cfg.port, 2.0)}")
 
 
 def main(argv=None) -> int:
@@ -52,6 +98,9 @@ def main(argv=None) -> int:
     else:
         print("  cryptography : MISSING — signing/verification disabled "
               "(warn-mode only)")
+    enforce = (os.environ.get("SYN_ENFORCE_SIGNING") or "").strip() not in ("", "0")
+    print(f"  enforce sign : {'ON (deliver ok-verified only)' if enforce else 'off (warn-mode)'}")
+    _broker_section()
     return 0
 
 

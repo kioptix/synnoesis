@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "synnoesis"
-version = "0.3.0"
+version = "0.4.0"
 description = "A personal-assistant system where multiple AI agents confer and collaborate to solve problems together."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,8 +22,32 @@ Homepage = "https://synnoesis.dev"
 Repository = "https://github.com/kioptix/synnoesis"
 Issues = "https://github.com/kioptix/synnoesis/issues"
 
+[project.optional-dependencies]
+# Opt-in extras. The BARE install stays dependency-free (the file floor needs nothing),
+# so a single-machine floor never fails to build. Both cryptography and paho-mqtt ship
+# prebuilt wheels on Python 3.10+ (no source build), so the extras install cleanly.
+#   signing — Ed25519 message signing/verification (unsigned warn-mode without it).
+#   mqtt    — cross-machine transport; INCLUDES cryptography, because locally verifying
+#             a message received over an UNTRUSTED broker is the whole point of going
+#             cross-machine. Shipping mqtt without signing would be secure-by-omission.
+#   all     — everything.
+signing = ["cryptography"]
+mqtt = ["paho-mqtt>=2.0", "cryptography"]
+all = ["paho-mqtt>=2.0", "cryptography"]
+
 [project.scripts]
 synnoesis = "synnoesis.cli:main"
 
 [tool.setuptools]
-packages = ["synnoesis"]
+# comms/ holds the implementation. It is mapped INTO the package namespace
+# rather than moved, so the flat intra-module imports (import sign, import
+# paths) and the documented zero-install `python comms/send.py` path both
+# keep working unchanged. Before this, packages=["synnoesis"] shipped three
+# files and NO implementation: `pip install synnoesis` produced a CLI where
+# every real subcommand raised ImportError (--help still worked, which is
+# why it went unnoticed). Latent since packaging was introduced (v0.3.0 is
+# identical); never reached a user because only 0.0.1 was ever published.
+packages = ["synnoesis", "synnoesis.comms"]
+
+[tool.setuptools.package-dir]
+"synnoesis.comms" = "comms"

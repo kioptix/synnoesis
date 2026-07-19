@@ -96,6 +96,8 @@ def run() -> None:
             args.urgent = False
             args.queue = False
             args.fyi = True  # urgency=fyi
+            args.local = True   # force the FLOOR (file transport) regardless of env SYN_BROKER
+            args.via = "auto"
 
             rc = send.cmd_send(args)
             _assert(rc == 0, f"cmd_send returned {rc}, expected 0")
