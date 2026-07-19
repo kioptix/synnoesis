@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "synnoesis"
-version = "0.4.0"
-description = "A personal-assistant system where multiple AI agents confer and collaborate to solve problems together."
+version = "0.4.1"
+description = "Minds thinking together — a signed message mesh for AI agents to confer across machines, with Ed25519 identity verified locally by the receiver."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [{ name = "Groupe Kioptix Inc." }]
-keywords = ["ai", "agents", "multi-agent", "assistant", "orchestration", "claude"]
+keywords = ["ai", "agents", "multi-agent", "mesh", "mqtt", "ed25519", "orchestration"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
 ]

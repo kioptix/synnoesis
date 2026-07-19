@@ -10,8 +10,9 @@ Apache-2.0, Groupe Kioptix Inc.). Treat it as production + public.
    he reads + understands every change before it is committed. Commit only on his
    explicit, per-change go. This is his system to understand and own.
 2. **ROE-2 — Versioning is SemVer + annotated tags + CHANGELOG**, all four version
-   sources (tag / pyproject / package.json / CHANGELOG) kept in sync. First MVP
-   release = `v0.1.0`. No tagging un-reviewed code.
+   sources (tag / pyproject / `synnoesis/__init__.py` / CHANGELOG) kept in sync —
+   enforced by `tests/test_version_consistency.py`, which `tools/release-gate.py`
+   runs first. First MVP release = `v0.1.0`. No tagging un-reviewed code.
 
 ## Standard
 Secrets never committed (hardened `.gitignore` + `gitleaks` before every push);

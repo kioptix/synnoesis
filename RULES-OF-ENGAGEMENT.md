@@ -39,7 +39,10 @@ review is fine and encouraged; committing them is not yours to do.
   `CHANGELOG.md` entry** (Keep a Changelog format: Added / Changed / Fixed /
   Removed).
 - The four version sources must **always agree**: the git tag, `pyproject.toml`
-  `version`, `package.json` `version`, and the CHANGELOG heading.
+  `version`, `synnoesis/__init__.py` `__version__`, and the CHANGELOG heading.
+  The three in-tree ones are enforced by `tests/test_version_consistency.py`,
+  which `tools/release-gate.py` runs before it builds anything; the tag is yours
+  to create at release time under ROE-1.
 - **No tagging un-reviewed code** — ROE-1 happens first.
 
 ---

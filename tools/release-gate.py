@@ -58,13 +58,50 @@ def run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True, **kw)
 
 
+def check_version_consistency() -> None:
+    """Run the in-tree version gate FIRST -- it is cheap and it fails fast.
+
+    The check itself already existed (tests/test_version_consistency.py) but
+    NOTHING RAN IT at release time, which is its own trap: a check that exists
+    but is never invoked reads like coverage and provides none. Wired, not fired.
+
+    Runs first because a version mismatch invalidates every artifact built after
+    it -- no point spending two clean-venv installs on a build that is mislabeled.
+    """
+    print("\n[1/5] version consistency across in-tree sites")
+    test = REPO / "tests" / "test_version_consistency.py"
+    if not test.is_file():
+        # Fail-closed: a MISSING gate is not a passing gate.
+        fail(f"version gate missing: {test.relative_to(REPO)} not found")
+        return
+    r = run([sys.executable, str(test)], cwd=str(REPO))
+    if r.returncode != 0:
+        blob = (r.stdout or "") + (r.stderr or "")
+        bad = [l.strip() for l in blob.splitlines() if l.strip().startswith("FAIL")]
+        fail("version sites disagree or are stale: "
+             + ("; ".join(bad)[:300] if bad else blob.strip()[-200:]))
+    else:
+        ok("all in-tree version sites agree")
+
+
 def build_artifacts(outdir: Path) -> tuple[Path | None, Path | None]:
-    print("\n[1/4] building wheel + sdist")
-    r = run([sys.executable, "-m", "build", "--outdir", str(outdir), str(REPO)])
+    print("\n[2/5] building wheel + sdist")
+    # cwd OUTSIDE the repo, for the same reason check_install does it: run from the
+    # repo root and the repo's own `build/` artifact directory shadows the `build`
+    # TOOL as a namespace package, so `python -m build` dies with "'build' is a
+    # package and cannot be directly executed" and we silently drop to the
+    # wheel-only fallback. Observed on a tree that had been built in-place; it also
+    # makes `import build` succeed while the tool is not installed at all, which is
+    # a very convincing false positive. Passing REPO explicitly keeps the target
+    # unambiguous from anywhere.
+    r = run([sys.executable, "-m", "build", "--outdir", str(outdir), str(REPO)],
+            cwd=str(outdir))
     if r.returncode != 0:
         # `build` is the modern backend-agnostic builder; without it we can still
         # wheel, but an sdist-less run must NOT silently pass -- it is half a gate.
-        print("        `python -m build` unavailable; falling back to pip wheel")
+        why = (r.stderr or r.stdout or "").strip().splitlines()
+        print(f"        `python -m build` failed: {why[-1][:120] if why else '?'}")
+        print("        falling back to pip wheel")
         r2 = run([sys.executable, "-m", "pip", "wheel", str(REPO),
                   "--no-deps", "-w", str(outdir)])
         if r2.returncode != 0:
@@ -84,7 +121,7 @@ def build_artifacts(outdir: Path) -> tuple[Path | None, Path | None]:
 
 def check_wheel_complete(whl: Path) -> None:
     """EXHAUSTIVE: every comms/*.py must be in the wheel. Command-sampling samples."""
-    print("\n[2/4] wheel contents vs comms/ (exhaustive, not sampled)")
+    print("\n[3/5] wheel contents vs comms/ (exhaustive, not sampled)")
     repo_mods = {p.name for p in (REPO / "comms").glob("*.py")}
     names = zipfile.ZipFile(whl).namelist()
     shipped = {os.path.basename(n) for n in names
@@ -98,7 +135,7 @@ def check_wheel_complete(whl: Path) -> None:
 
 def check_install(artifact: Path, label: str) -> None:
     """Install into a CLEAN venv and run a REAL subcommand -- the developer-never-uses path."""
-    print(f"\n[{'3' if label == 'wheel' else '4'}/4] clean-venv install from {label}")
+    print(f"\n[{'4' if label == 'wheel' else '5'}/5] clean-venv install from {label}")
     with tempfile.TemporaryDirectory() as td:
         venv = Path(td) / "v"
         if run([sys.executable, "-m", "venv", str(venv)]).returncode != 0:
@@ -128,6 +165,7 @@ def check_install(artifact: Path, label: str) -> None:
 def main() -> int:
     print(f"release gate -- {REPO.name}")
     print("exercising the artifact in the environment the developer never uses")
+    check_version_consistency()
     with tempfile.TemporaryDirectory() as td:
         out = Path(td) / "dist"
         out.mkdir()

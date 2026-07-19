@@ -10,6 +10,41 @@ part held stable; transports underneath it may evolve.
 
 ## [Unreleased]
 
+## [0.4.1] — honest packaging metadata
+
+A documentation and metadata release. **No code changes** — the library behaves
+identically to 0.4.0. It exists because PyPI releases are immutable: the project
+description shown on the package page is baked into the published artifact, and
+0.4.0's said only that the project was early development, with no description of
+what it actually does.
+
+### Changed
+
+- **README rewritten.** Leads with what Synnoesis is (a signed message mesh for
+  agents), what works today versus what does not, a runnable 60-second example,
+  and the security model — including what it deliberately does *not* do (signing
+  is not encryption; the replay bound is a bound, not a proof; there is no
+  authorization layer). The previous README said only "🚧 Early development."
+- Package `description` and keywords now describe the mesh rather than a
+  personal-assistant system, matching the README and the shipped surface.
+- `Development Status` classifier `2 - Pre-Alpha` → `3 - Alpha`.
+
+### Removed
+
+- **The npm placeholder (`package.json`, `index.js`).** A five-line module
+  exporting `{}` that carried the same version number as the real Python package,
+  claiming a parity that did not exist. It was never published. If a JavaScript
+  package ships in future it will be added back with an implementation behind it,
+  and re-added to the version-consistency gate in the same change.
+
+### Fixed
+
+- **The release gate now runs the version-consistency check.** That check already
+  existed (`tests/test_version_consistency.py`) but nothing invoked it at release
+  time, so a build whose metadata files disagreed would have passed the gate. It
+  now runs first, before any artifact is built, and a *missing* check fails the
+  gate rather than being silently skipped.
+
 ## [0.4.0] — cross-machine transport (MQTT)
 
 The file-transport floor (same machine, shared filesystem) has always been the

@@ -11,4 +11,4 @@ never vouches for identity.
 Copyright 2026 Groupe Kioptix Inc. Released under the Apache License 2.0.
 """
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
