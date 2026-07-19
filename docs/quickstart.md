@@ -339,6 +339,40 @@ pip install "paho-mqtt>=2.0" cryptography
 > two commands above — the bare form would pull the last *published* version from PyPI, not
 > your local code.
 
+#### If `cryptography` starts building from source
+
+Elsewhere in this guide, a failed `cryptography` build is something you can simply skip —
+the floor runs fine without signing. **Here you cannot.** Verifying a message that arrived
+over an untrusted broker *is* the feature; without `cryptography` there is no cross-machine
+story worth having. So if pip starts compiling it (Rust toolchain, OpenSSL headers, a long
+wait, often an error), that has to be solved rather than skipped.
+
+Almost always this means **pip found no prebuilt wheel for your platform and fell back to
+the source distribution.** The usual causes, in order of likelihood:
+
+| cause | check | fix |
+|---|---|---|
+| **Intel macOS.** `cryptography` 49 dropped the `macosx_10_9_universal2` wheel (Intel + ARM) and now ships `macosx_11_0_arm64` only — so on an Intel Mac there is **no wheel at all** | `python -c "import platform; print(platform.machine())"` → `x86_64` | `pip install "cryptography<49"` **in your environment** (see the note below), or use an arm64-native Python if the hardware allows |
+| **A Rosetta/x86_64 Python on Apple Silicon** — same effect as above, self-inflicted | as above; `arm64` is what you want | reinstall Python as native arm64, then retry |
+| **32-bit Windows.** 49 also dropped the `win32` wheel; only `win_amd64` remains | `python -c "import platform; print(platform.machine())"` | use a 64-bit Python |
+| **An old `pip`** that doesn't understand current wheel tags | `pip --version`; `pip debug --verbose` lists the tags it accepts | `python -m pip install --upgrade pip`, then retry |
+
+To confirm it is a *wheel-availability* problem and not something else, force pip to refuse
+source builds — it will then say plainly that no distribution matches:
+
+```bash
+pip install --only-binary :all: cryptography
+```
+
+> **Why Synnoesis does not simply pin `cryptography<49` for you.** `cryptography` is a
+> security dependency. An upper bound in *our* package metadata would freeze **every**
+> user's crypto library at a known point and quietly withhold future security fixes — to
+> accommodate one platform that upstream chose to stop building for. That is the wrong
+> trade for a project whose entire premise is verifiable messages. The constraint belongs
+> in the environment that needs it, not in the contract everyone inherits.
+>
+> This applies to the `signing` extra too, not just `mqtt` — both pull `cryptography`.
+
 ### 6.3 Trust genesis is out-of-band — NOT over the broker
 
 Cross-machine signing uses the **same keys and fingerprints** from [§5](#5-trust-model),
