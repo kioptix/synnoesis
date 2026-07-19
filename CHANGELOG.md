@@ -22,6 +22,19 @@ The floor is untouched: with ``SYN_BROKER`` unset, behavior is byte-for-byte
 identical to v0.3.0, and the MQTT client (``paho-mqtt``) is an **optional** extra —
 a single-machine install stays dependency-free.
 
+### Fixed
+
+- **Packaging: the built artifacts did not contain the implementation.**
+  `packages = ["synnoesis"]` shipped three files; the entire `comms/` floor (11
+  modules) was absent from both the wheel and the sdist. A `pip install synnoesis`
+  produced a CLI where every real subcommand raised `ImportError` — `--help` still
+  worked, which is why it went unnoticed. `comms/` is now mapped into the package
+  namespace via `package-dir`, and `cli.py` resolves the installed layout first.
+
+  This is a **latent defect that predates this release**, not a v0.4.0 regression:
+  `v0.3.0`'s `pyproject.toml` is identical. It never reached a user — only the
+  `0.0.1` name-reservation placeholder was ever published.
+
 ### Added
 - ``synnoesis listen`` — the cross-machine RECEIVER bridge. Subscribes
   ``agent/<me>/inbox`` on the broker, **re-verifies each message against THIS

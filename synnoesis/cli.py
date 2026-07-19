@@ -16,9 +16,20 @@ from pathlib import Path
 
 
 def _floor_dir() -> Path:
-    """Resolve the comms/ floor dir. Under both the zero-install checkout and the
-    b2 editable install, the floor sits at <repo>/comms beside synnoesis/."""
-    return Path(__file__).resolve().parent.parent / "comms"
+    """Resolve the comms/ floor dir, checking the INSTALLED layout first.
+
+    Wheel/sdist install -> <site-packages>/synnoesis/comms (packaged via
+    package-dir). Checkout and editable install -> <repo>/comms, beside
+    synnoesis/. Ordered installed-first because a checkout has no
+    synnoesis/comms, so the fallback is unambiguous either way.
+
+    pathlib only, no separator or drive assumptions -- this function is the one
+    most likely to diverge across platforms and is untested off Windows."""
+    here = Path(__file__).resolve().parent
+    installed = here / "comms"
+    if installed.is_dir():
+        return installed
+    return here.parent / "comms"
 
 
 def main(argv=None) -> int:

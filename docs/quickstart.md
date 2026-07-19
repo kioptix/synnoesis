@@ -36,6 +36,14 @@ call.
 Everything else is the Python standard library. The floor has **no broker and
 no container** to install.
 
+> **Going cross-machine ([§6](#6-cross-machine-mqtt-v040)) needs two more things**,
+> and neither arrives with `pip`:
+> - **A reachable MQTT broker** that you supply. Synnoesis ships none — `mosquitto`
+>   is a one-liner on every OS and needs no Docker ([§6.1](#61-install-a-broker-bring-your-own-we-ship-none)).
+> - **`cryptography` becomes mandatory**, not optional. Off-box, verifying a message
+>   that crossed an untrusted broker *is* the feature, so the "just skip it" advice
+>   above stops applying ([§6.2](#62-install-the-cross-machine-dependencies)).
+
 ---
 
 ## 3. Setup
