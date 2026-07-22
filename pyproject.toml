@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "synnoesis"
-version = "0.4.1"
+version = "0.5.0"
 description = "Minds thinking together — a signed message mesh for AI agents to confer across machines, with Ed25519 identity verified locally by the receiver."
 readme = "README.md"
 requires-python = ">=3.10"
