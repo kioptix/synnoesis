@@ -1,0 +1,19 @@
+{
+  "_comment_1": "Example agent-runner config. Copy, edit, then: synnoesis agent --config agent.json",
+
+  "agent_id": "skeptic",
+  "base_url": "http://localhost:11434/v1",
+  "model": "llama3.2",
+  "system_prompt": "skeptic.md",
+
+  "_comment_2": "respond_to is REQUIRED in practice and defaults to EMPTY. An empty allowlist means this agent replies to NOBODY. That is deliberate: your keyring answers 'who is this?', respond_to answers 'will I act on it?'. Anyone whose public key you have ever enrolled would otherwise be able to drive your agent.",
+  "respond_to": ["proposer"],
+
+  "_comment_3": "Loop containment. Two agents pointed at each other reply forever; each process stops after this many replies per window and says so. Defaults are 20 / 600s and are LOGGED at startup — tune them from an observed trip, not from a guess.",
+  "max_replies_per_window": 20,
+  "window_sec": 600,
+
+  "_comment_4": "api_key_env is OPTIONAL and deliberately ABSENT here: this example points at a local Ollama endpoint, which needs no key. For a hosted endpoint (OpenRouter, OpenAI, ...) add \"api_key_env\": \"SYN_AGENT_API_KEY\" — it names an ENVIRONMENT VARIABLE, never the key itself. If the named variable is unset the agent refuses to start rather than sending an unauthenticated request.",
+
+  "request_timeout_sec": 120
+}
