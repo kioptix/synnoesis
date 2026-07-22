@@ -226,10 +226,33 @@ def require_paho():
             "  or use the file transport with --local.") from e
 
 
-def _new_client(mqtt, cfg: BrokerConfig, client_id: str):
+def _new_client(mqtt, cfg: BrokerConfig, client_id: str, *,
+                clean_session=None, will=None):
     """Build a paho Client (callback API v2) wired for TLS + auth per ``cfg``. Does
-    NOT connect — the caller connects (publisher one-shot, subscriber loop)."""
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id)
+    NOT connect — the caller connects (publisher one-shot, subscriber loop).
+
+    ``clean_session=False`` asks the broker to PERSIST this client's session, so
+    messages published while the client is down are queued and delivered on
+    reconnect. It requires a stable, non-empty client_id — a persistent session is
+    keyed by that id, and an empty/random one would strand the queue under an id
+    nobody reconnects as. Asserted rather than assumed.
+
+    ``will`` is ``(topic, payload, qos, retain)`` — the Last Will the BROKER publishes
+    if this client dies without a clean disconnect. It is registered at CONNECT time,
+    which is why its signed ``_at`` is the connect timestamp and not the death
+    timestamp. Consumers must therefore treat presence age as informational, never as
+    a freshness gate. See presence.py.
+    """
+    if clean_session is False and not (client_id or "").strip():
+        raise SynBrokerError(
+            "a persistent session (clean_session=False) requires a stable client_id; "
+            "got an empty one — the broker would queue messages under an id nothing "
+            "reconnects as.")
+    kw = {} if clean_session is None else {"clean_session": clean_session}
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id, **kw)
+    if will is not None:
+        w_topic, w_payload, w_qos, w_retain = will
+        client.will_set(w_topic, w_payload, qos=w_qos, retain=w_retain)
     if cfg.use_tls:
         import ssl
         client.tls_set(ca_certs=cfg.tls_ca, cert_reqs=ssl.CERT_REQUIRED,
@@ -249,7 +272,8 @@ def _new_client(mqtt, cfg: BrokerConfig, client_id: str):
 
 
 def publish_one(cfg: BrokerConfig, topic: str, payload: bytes, *,
-                qos: int = 1, client_id: str, timeout: float = 15.0) -> None:
+                qos: int = 1, client_id: str, timeout: float = 15.0,
+                retain: bool = False) -> None:
     """Connect, publish ONE message, block until the broker acks (qos1), disconnect.
     Enforces the security floor first. Raises ``SynBrokerError`` on any failure so a
     caller never believes an unsent message was delivered."""
@@ -263,7 +287,7 @@ def publish_one(cfg: BrokerConfig, topic: str, payload: bytes, *,
             f"cannot connect to broker {cfg.host}:{cfg.port}: {e}") from e
     try:
         client.loop_start()
-        info = client.publish(topic, payload, qos=qos)
+        info = client.publish(topic, payload, qos=qos, retain=retain)
         info.wait_for_publish(timeout=timeout)
         if not info.is_published():
             raise SynBrokerError(
@@ -278,24 +302,39 @@ def publish_one(cfg: BrokerConfig, topic: str, payload: bytes, *,
 
 
 def open_subscriber(cfg: BrokerConfig, topic: str, on_message, *,
-                    client_id: str, on_ready=None):
+                    client_id: str, on_ready=None, clean_session=None, will=None):
     """Connect a subscriber to ``topic`` (qos1) with ``on_message(client, userdata,
     message)``. Enforces the security floor first. Returns the connected client; the
-    caller runs ``client.loop_forever()``. ``on_ready(host, topic)`` fires once the
-    subscription is confirmed."""
+    caller runs ``client.loop_forever()``. ``on_ready(host, topic, session_present)``
+    fires once the subscription is confirmed.
+
+    ``clean_session=False`` + a stable ``client_id`` gives DURABLE DELIVERY: the broker
+    queues qos1 messages published while this client is down and delivers them on
+    reconnect. ``will`` registers a Last Will (see ``_new_client``)."""
     check_transport_security(cfg)
     mqtt = require_paho()
-    client = _new_client(mqtt, cfg, client_id)
+    client = _new_client(mqtt, cfg, client_id, clean_session=clean_session, will=will)
 
-    def _on_connect(_c, _u, _flags, reason_code, _props=None):
+    def _on_connect(_c, _u, flags, reason_code, _props=None):
         rc = int(getattr(reason_code, "value", reason_code) or 0)
         if rc != 0:
             _stderr(f"error: broker refused the connection (reason {rc}); "
                     "check auth / TLS / credentials.")
             return
+        # session_present tells us whether the broker RESTORED a persistent session
+        # (so a queued backlog is inbound) or created a fresh one (nothing was held).
+        # Surfaced rather than swallowed: "my messages were queued" and "the broker
+        # had no session for me" look identical from the outside otherwise.
+        present = bool(getattr(flags, "session_present", False)
+                       if not isinstance(flags, dict) else flags.get("session_present"))
+        # Re-subscribing is idempotent and is required when session_present is False
+        # (a fresh session has no stored subscriptions).
         client.subscribe(topic, qos=1)
         if on_ready:
-            on_ready(cfg.host, topic)
+            try:
+                on_ready(cfg.host, topic, present)
+            except TypeError:
+                on_ready(cfg.host, topic)   # back-compat with 2-arg callbacks
 
     client.on_connect = _on_connect
     client.on_message = on_message

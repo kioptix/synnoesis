@@ -112,6 +112,16 @@ def cmd_send(args) -> int:
             print(f"error: {e}", file=sys.stderr)
             return 1
         print(f"published -> {topic}  ({urgency} from {me})")
+        # S4: best-effort recipient-presence note, AFTER the send has already
+        # succeeded. Never fails the send, never delays it by more than its own
+        # bounded timeout, and stays quiet when the recipient looks online.
+        try:
+            import presence  # noqa: PLC0415 — only needed on the broker path
+            note = presence.offline_note(presence.peek(cfg, args.to), args.to)
+            if note:
+                print(note, file=sys.stderr)
+        except Exception:  # noqa: BLE001 — a presence lookup must never affect a send
+            pass
         return 0
 
     # --- file transport (the floor) — behavior unchanged from v0.3.0 ---

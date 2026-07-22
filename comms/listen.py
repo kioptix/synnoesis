@@ -48,6 +48,7 @@ import sign     # noqa: E402  — Ed25519 verify + keyring + DS_TAG_ENVELOPE
 import wire     # noqa: E402  — the ONE outer-record builder (field-identity)
 import paths    # noqa: E402  — portable data-home resolver
 import mqtt as mq  # noqa: E402  — broker transport + security floor
+import presence  # noqa: E402  — retained, record-signed online/offline state
 
 # A message's nonce is always deduped for at least this long, even when freshness
 # is disabled, so qos1 broker duplicates (delivered seconds apart) never double-write.
@@ -169,6 +170,7 @@ def run(me: str, *, max_age_sec: int, enforce: bool) -> int:
     topic = f"agent/{me}/inbox"
     inbox_path = paths.service_dir("comms", create=True) / f"{me}-inbox.jsonl"
     seen: dict = {}
+    started_at = datetime.now(timezone.utc).isoformat()
 
     def on_message(_client, _userdata, message):
         keyring = sign.load_keyring()          # reload per message ⇒ new keys w/o restart
@@ -186,15 +188,47 @@ def run(me: str, *, max_age_sec: int, enforce: bool) -> int:
         else:
             print(f"· dropped from {d.sender}: {d.reason}")
 
-    def on_ready(host, top):
+    holder = {}
+
+    def on_ready(host, top, session_present=None):
         mode = "ENFORCE (ok-only)" if enforce else "warn (deliver + mark)"
         fresh = f"{max_age_sec}s" if max_age_sec > 0 else "disabled"
         print(f"listening as {me!r} on {host} [{top}] — signing: {mode}, "
               f"freshness: {fresh}. Ctrl-C to stop.")
+        if session_present is not None:
+            # "The broker had a session for me" and "the broker had nothing" are
+            # indistinguishable without this line, and they mean very different things
+            # for whether a backlog is about to arrive.
+            print("  durable session: RESUMED — any messages sent while this listener "
+                  "was down are being delivered now."
+                  if session_present else
+                  "  durable session: NEW — the broker held no prior session, so "
+                  "nothing was queued for this agent.")
+        # Announce ONLINE on the live client — no second connection, and it rides the
+        # session we just established. Retained so a peer connecting later still sees it.
+        c = holder.get("client")
+        if c is not None:
+            try:
+                c.publish(presence.topic_for(me),
+                          presence.payload(me, online=True, via=presence.VIA_CONNECT,
+                                           listener_started_at=started_at),
+                          qos=1, retain=True)
+            except Exception as e:  # noqa: BLE001 — presence must never kill the listener
+                print(f"  warning: could not publish presence: {e}", file=sys.stderr)
 
     try:
-        client = mq.open_subscriber(cfg, topic, on_message,
-                                    client_id=f"synnoesis-listen-{me}", on_ready=on_ready)
+        client = mq.open_subscriber(
+            cfg, topic, on_message,
+            client_id=f"synnoesis-listen-{me}", on_ready=on_ready,
+            # DURABLE DELIVERY: a stable client-id plus a persistent session means the
+            # broker queues qos1 messages published while this listener is down.
+            # NOTE the durability window is the FRESHNESS window: a message queued
+            # longer than SYN_MAX_AGE_SEC is dropped as stale on delivery. Raise it
+            # deliberately if listeners are expected to be down longer -- and accept
+            # the correspondingly wider replay tolerance.
+            clean_session=False,
+            will=presence.will_tuple(me))
+        holder["client"] = client
     except mq.SynBrokerError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
@@ -203,6 +237,15 @@ def run(me: str, *, max_age_sec: int, enforce: bool) -> int:
     except KeyboardInterrupt:
         print("\nstopping.")
     finally:
+        # Clean shutdown: say so explicitly, so peers can tell "went away on purpose"
+        # from "died" (which the broker reports via the Last Will instead).
+        try:
+            client.publish(presence.topic_for(me),
+                           presence.payload(me, online=False,
+                                            via=presence.VIA_CLEAN_SHUTDOWN),
+                           qos=1, retain=True).wait_for_publish(timeout=5)
+        except Exception:  # noqa: BLE001
+            pass
         try:
             client.disconnect()
         except Exception:  # noqa: BLE001
