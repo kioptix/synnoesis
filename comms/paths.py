@@ -38,7 +38,7 @@ def _env(name: str) -> str | None:
 
 
 def _norm(service: str) -> str:
-    """Normalize a service name for the dir + env-var ('pa-memory' -> 'memory')."""
+    """Normalize a service name for the dir + env-var (strips a leading 'pa-'/'pa_'; e.g. 'pa-notes' -> 'notes')."""
     s = service.strip().lower()
     return s[3:] if s.startswith("pa-") or s.startswith("pa_") else s
 

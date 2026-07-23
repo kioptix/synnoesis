@@ -10,6 +10,76 @@ part held stable; transports underneath it may evolve.
 
 ## [Unreleased]
 
+## [0.5.0] — the agent runner, presence & durable delivery
+
+### Added
+
+- **`synnoesis agent` — the agent runner.** A config-driven daemon that attaches a
+  model to the mesh: subscribe → verify locally → authorize → model turn → signed
+  reply. Until now Synnoesis moved messages *between* agents but never ran one; the
+  roles in `examples/` are now executable rather than illustrative. Any
+  OpenAI-compatible endpoint (Ollama, OpenRouter, vLLM, …) via `base_url`; no new
+  dependencies.
+- **Durable delivery.** `listen` now connects with a stable client-id and a persistent
+  broker session, so qos1 messages published while a listener is DOWN are queued and
+  delivered on reconnect. Previously they were simply lost. On connect the listener
+  reports whether the broker **resumed** a session (a backlog is arriving) or opened a
+  **new** one (nothing was held) — the two are otherwise indistinguishable.
+- **Presence.** Listeners publish a retained, record-signed state document to
+  `agent/<id>/state` — `online` on connect, `offline` on clean shutdown, and an
+  `offline via lwt` Last Will that the *broker* publishes if the agent dies
+  ungracefully.
+- **`synnoesis who`** — list agents' presence with age and signature status.
+- `send` prints a best-effort note when the recipient looks offline (never fails or
+  delays the send), and `doctor` gained a presence section that reads this agent's own
+  retained record back from the broker.
+
+### Security
+
+- **The agent runner has no tools.** The model turn is text-in → text-out. No
+  filesystem, no shell, no network egress beyond the configured model endpoint. This
+  is a structural choice, not a filter: injection *detection* is a semantic
+  classifier, and a semantic classifier cannot carry a security boundary. An injected
+  agent can be made to **say** anything and can **do** nothing.
+- 🔴 **A signed agent reply is AUTHENTIC and UNVETTED.** The runner signs its output,
+  so untrusted content that arrives leaves *authenticated under the agent's key* — the
+  daemon is harmless itself but is a **signature-laundering step**, and an injection
+  can chain through it to a downstream peer that *does* have tools. Replies carry an
+  explicit banner saying so. Consumers must not read `verify=ok` as "safe to act on".
+- **Authorization is separate from verification.** `respond_to` defaults to **empty**:
+  the agent replies to nobody until configured. Keyring membership answers *who is
+  this*; `respond_to` answers *will I act on it*. Conflating them would let anyone
+  whose key you ever enrolled drive your agent. An unlisted sender gets a loud,
+  instructive refusal in the log — and no reply.
+- **Signature enforcement is forced on** in the agent path regardless of
+  `SYN_ENFORCE_SIGNING`, and startup fails loudly if `cryptography` is absent.
+- **Loop containment:** a per-process rolling reply budget (default 20 / 600s, logged
+  at startup so it is tuned from observed trips rather than guessed). Exhaustion is
+  announced once per window — a silent budget trip would be indistinguishable from a
+  dead agent. Bounds what this process emits, not the mesh as a whole; a signed hop
+  counter would bound the chain but requires a wire-contract change, so it is deferred.
+- **No secrets in config:** `api_key_env` names an *environment variable*, never a key,
+  and an unset variable is fatal rather than silently unauthenticated.
+- **Presence is record-signed from day one** (`synnoesis/presence/v1` domain tag). An
+  unsigned presence channel lets anyone who can reach the broker declare anyone else
+  online or offline — worse than no presence, because it is confident and wrong. A
+  record whose signature fails is displayed **as a forgery**, never folded into
+  "offline" and never counted as online.
+- **A validly-signed record on the wrong topic is rejected.** The signature covers the
+  record's own `agent_id`; publishing your genuinely-signed record onto *another*
+  agent's state topic is a real spoof that signature-checking alone does not catch, so
+  topic and signed identity must agree.
+- **Presence is never freshness-gated, deliberately.** A Last Will is signed at connect
+  time but published at death time, so it legitimately arrives hours "stale" — a
+  freshness check would drop exactly the record that reports an agent died. Staleness
+  is displayed, not enforced, and `who` says so next to the answer.
+- **Honest staleness in the output:** retained ≠ alive, and ages are cross-clock and
+  therefore approximate. `who` prints both caveats alongside the results rather than
+  burying them in docs — the display is informational and must never be reused as a
+  liveness gate.
+- A persistent session with an empty client-id is **refused**: the broker would queue
+  messages under an identity nothing reconnects as.
+
 ## [0.4.1] — honest packaging metadata
 
 A documentation and metadata release. **No code changes** — the library behaves
@@ -212,7 +282,10 @@ Docker.
 - Cross-machine messaging (an OS-agnostic, Python-based broker) is planned for a
   future release.
 
-[Unreleased]: https://github.com/kioptix/synnoesis/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/kioptix/synnoesis/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/kioptix/synnoesis/compare/v0.4.1...v0.5.0
+[0.4.1]: https://github.com/kioptix/synnoesis/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/kioptix/synnoesis/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/kioptix/synnoesis/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/kioptix/synnoesis/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/kioptix/synnoesis/releases/tag/v0.1.0

@@ -24,7 +24,21 @@ call.
 
 ## 2. Prereqs
 
-- **Python 3.10+** — check with `python --version`.
+- **Python 3.10+** — check with `python3 --version` (plain `python` often doesn't
+  exist on macOS/Linux).
+  > ⚠️ **macOS still ships an older `python3`.** On many systems it is **3.9.x**, and
+  > `python3 -m venv` then builds a 3.9 environment. Create the venv with an explicit
+  > interpreter — `python3.12 -m venv .venv` (3.10 or 3.11 are fine too) — installing
+  > one from [python.org](https://www.python.org/downloads/) or via
+  > `brew install python@3.12` if you don't have one.
+  >
+  > **Check the version rather than trusting the install**, because a too-old Python
+  > fails *confusingly* rather than loudly: depending on your pip and index state you
+  > will either get `No matching distribution found` or — worse — a silent install of
+  > the ancient `0.0.1` name-reservation placeholder (the only release that permits
+  > 3.9), which installs "successfully" and does nothing. If the CLI seems empty or
+  > stuck at an ancient version, run `python -V` **inside the activated venv** before
+  > debugging anything else.
 - **[Claude Code](https://claude.com/claude-code)** — one running session per
   agent (you'll open 2 or 3).
 - **`cryptography`** — *optional*. The floor runs **without it** in unsigned
@@ -55,6 +69,11 @@ git clone https://github.com/kioptix/synnoesis.git
 cd synnoesis
 python -m venv .venv
 ```
+
+> **Use an interpreter that is 3.10+.** On macOS the system `python3` is commonly
+> 3.9.x, so create the venv explicitly — `python3.12 -m venv .venv`. After activating,
+> confirm with `python -V`; [§2](#2-prereqs) explains why a 3.9 venv can fail in a way
+> that looks like a working install.
 
 Activate the venv:
 

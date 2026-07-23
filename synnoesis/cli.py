@@ -37,7 +37,7 @@ def main(argv=None) -> int:
     sys.path.insert(0, str(_floor_dir()))     # ONE bootstrap, here only
     if not argv or argv[0] in ("-h", "--help"):
         print("usage: synnoesis "
-              "{send|read|listen|keygen|keyring|fingerprint|doctor} [args...]")
+              "{send|read|listen|agent|who|keygen|keyring|fingerprint|doctor} [args...]")
         return 0 if argv else 2
     sub, rest = argv[0], argv[1:]
     if sub == "send":
@@ -49,6 +49,12 @@ def main(argv=None) -> int:
     if sub == "listen":
         import listen
         return listen.main(rest)
+    if sub == "agent":
+        import agent
+        return agent.main(rest)
+    if sub == "who":
+        import who
+        return who.main(rest)
     if sub == "keygen":
         import keygen
         return keygen.main(rest)
@@ -62,7 +68,7 @@ def main(argv=None) -> int:
         import doctor
         return doctor.main(rest)
     print(f"unknown subcommand {sub!r}; expected "
-          "send|read|listen|keygen|keyring|fingerprint|doctor", file=sys.stderr)
+          "send|read|listen|agent|who|keygen|keyring|fingerprint|doctor", file=sys.stderr)
     return 2
 
 

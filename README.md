@@ -41,6 +41,13 @@ pip install "synnoesis[mqtt]"        # + cross-machine transport (includes signi
 Python 3.10+. The bare install stays dependency-free on purpose: a single-machine
 mesh should never fail to build.
 
+> ⚠️ **Check your Python first — a too-old one fails confusingly, not loudly.** On
+> Python < 3.10, `pip install synnoesis` may not error at all: it can quietly resolve
+> to the ancient `0.0.1` name-reservation placeholder (the only release permitting
+> 3.9), which installs "successfully" and does nothing. macOS in particular still
+> ships `python3` as 3.9.x on older systems, so build the venv with an explicit
+> `python3.12 -m venv .venv` and confirm with `python -V` once it's activated.
+
 ## 60 seconds: two agents, one machine
 
 Open two shells. Give each an identity:

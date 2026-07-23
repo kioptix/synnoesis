@@ -1,6 +1,6 @@
 # Synnoesis — Rules of Engagement
 
-_The operating rules for this repository. Established by haken (project owner),
+_The operating rules for this repository. Established by the project owner (Groupe Kioptix Inc.),
 2026-06-24. The 🔴 MANDATORY rules are non-negotiable and override convenience,
 speed, or any contributor/agent's default behavior._
 
@@ -8,25 +8,25 @@ speed, or any contributor/agent's default behavior._
 
 ## 🔴 MANDATORY — NON-NEGOTIABLE
 
-### ROE-1 — Review-before-commit. Nothing is committed until haken has reviewed and understands it.
+### ROE-1 — Review-before-commit. Nothing is committed until the maintainer has reviewed and understands it.
 
-No code, config, or doc enters a Synnoesis **commit** until **haken has
+No code, config, or doc enters a Synnoesis **commit** until **the maintainer has
 personally read it and understands it.** This is two things at once: a quality
-gate, and haken's explicit goal — *to fully understand his own system* (he is
-publishing it; he must own every line).
+gate, and the maintainer's explicit goal — *to fully understand the system* (they are
+publishing it; they must own every line).
 
 **Workflow (always):**
 1. Contributor/agent **PREPARES** the change in the working tree (uncommitted).
-2. haken **REVIEWS** it — walkthrough-style, chunked (one subsystem / coherent
+2. The maintainer **REVIEWS** it — walkthrough-style, chunked (one subsystem / coherent
    unit per sitting), with the *why* explained, not just the *what*.
-3. **ONLY THEN** is it committed — by/with haken, on his explicit go.
+3. **ONLY THEN** is it committed — by/with the maintainer, on their explicit go.
 
-**Applies to ALL code** — copied from the upstream personal-assistant tree,
+**Applies to ALL code** — vendored from an upstream tree,
 AI-generated, or hand-modified. There is no "I'll just commit this quick."
 
 **For AI coding agents / assistants:** NEVER run `git commit` or `git push` on
-this repo autonomously. Stage and surface changes for haken's review; commit only
-on his explicit, per-change authorization. Preparing files in the working tree for
+this repo autonomously. Stage and surface changes for the maintainer's review; commit only
+on their explicit, per-change authorization. Preparing files in the working tree for
 review is fine and encouraged; committing them is not yours to do.
 
 ### ROE-2 — Professional version tagging (Semantic Versioning).
@@ -49,7 +49,7 @@ review is fine and encouraged; committing them is not yours to do.
 
 ## 🟢 PROFESSIONAL STANDARD — the bar for this repo
 
-_(haken's first published OSS project — do it right, consistently.)_
+_(a first published OSS project — do it right, consistently.)_
 
 - **Secrets NEVER committed.** Hardened `.gitignore` + a `gitleaks` / secret scan
   before **every** push. Protect commit-1's clean provenance — a leaked credential
@@ -68,11 +68,11 @@ _(haken's first published OSS project — do it right, consistently.)_
 
 ---
 
-## 🟠 DESIGN PRINCIPLES (architectural rules — haken-direct 2026-06-24)
+## 🟠 DESIGN PRINCIPLES (architectural rules — 2026-06-24)
 
 ### DP-1 — No absolute paths, except container-internal.
 The shipped code must contain **no machine-specific absolute paths** (no
-`C:/claude-home`, `/c/claude-home`, `C:/Users/haken`, hardcoded interpreter paths).
+`C:/app-home`, `/c/app-home`, `C:/Users/<you>`, hardcoded interpreter paths).
 All paths are **env/config-driven or derived relative to the code** (e.g. a single
 `PA_HOME`/root-resolver). Absolute paths are permitted **only inside a container**,
 where the container controls them (e.g. a fixed `/app` + `/data` layout). A path
@@ -101,8 +101,8 @@ surface), are deferred to later releases.
 
 ## Why these exist
 
-haken is publishing his first open-source project and wants it done well. ROE-1 is
-also a learning commitment — he reviews everything so he fully owns and understands
-the system he's putting his name (Groupe Kioptix Inc.) on. The assisting agent's
+The maintainer is publishing this open-source project and wants it done well. ROE-1 is
+also a learning commitment — they review everything so they fully own and understand
+the system being published under the Groupe Kioptix Inc. name. The assisting agent's
 job is to be a steady, professional OSS guide: keep it consistent, keep it
 reviewable, and **never rush a commit.**

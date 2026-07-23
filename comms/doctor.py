@@ -71,6 +71,44 @@ def _broker_section() -> None:
     print(f"  reachable    : {_probe(cfg.host, cfg.port, 2.0)}")
 
 
+def _presence_section(agent: str) -> None:
+    """S5: this agent's OWN retained presence, as other agents currently see it.
+
+    Reads the record rather than reporting what we believe we published — the whole
+    failure mode presence has is a stale retained record that everyone else is still
+    being served. Asking the broker is the only answer that means anything.
+    """
+    cfg = mq.resolve_broker()
+    if cfg is None:
+        return
+    print("  --- presence ---")
+    print("  durable recv : stable client-id + persistent session (messages sent "
+          "while `listen` is down are queued by the broker)")
+    print("  NOTE         : the durability window IS the freshness window — a "
+          "message queued longer than SYN_MAX_AGE_SEC is dropped as stale on "
+          "delivery. Raise it deliberately; it widens replay tolerance equally.")
+    if not agent:
+        print("  own state    : (no PA_AGENT_ID — cannot look up own presence)")
+        return
+    try:
+        import presence  # noqa: PLC0415
+        entry = presence.peek(cfg, agent, timeout=1.5)
+    except Exception as e:  # noqa: BLE001 — a diagnostic must never crash
+        print(f"  own state    : lookup failed ({e.__class__.__name__})")
+        return
+    if entry is None:
+        print("  own state    : none retained — this agent has not published "
+              "presence (run `synnoesis listen`)")
+        return
+    state = {True: "online", False: "offline"}.get(entry.get("online"), "unknown")
+    print(f"  own state    : {state} via {entry.get('via') or '?'}, last said "
+          f"{presence.age_str(entry.get('_at', ''))}  [verify="
+          f"{entry.get('status')}]")
+    if entry.get("status") == "bad":
+        print("  ⚠ WARNING    : your own retained presence record FAILS signature "
+              "verification — someone else may be publishing presence as you.")
+
+
 def main(argv=None) -> int:
     home = paths.pa_home()
     from_env = bool((os.environ.get("PA_HOME") or "").strip())
@@ -101,6 +139,7 @@ def main(argv=None) -> int:
     enforce = (os.environ.get("SYN_ENFORCE_SIGNING") or "").strip() not in ("", "0")
     print(f"  enforce sign : {'ON (deliver ok-verified only)' if enforce else 'off (warn-mode)'}")
     _broker_section()
+    _presence_section(agent)
     return 0
 
 
