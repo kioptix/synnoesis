@@ -115,6 +115,50 @@ def test_sign_verify_roundtrip() -> None:
           presence.parse(b"not json", "agent/alice/state", kr)["status"] == "malformed")
 
 
+def test_message_family_signature_is_rejected() -> None:
+    """Red-team (brain cond-3, cases i+iii): a presence record signed with the MESSAGE
+    helper -- sign.attach_signature, which covers only the envelope subset SIGNED_FIELDS
+    and so binds none of online/host/agent_id -- must NOT be accepted as presence. The
+    record path is the only accepted primitive; there is deliberately no message-family
+    dual-accept, because that signature binds no content and is forgeable by content-swap.
+    (Case ii -- content-swap on a record-family sig -- is the tamper check above.)"""
+    if not sign.CRYPTO_AVAILABLE:
+        check("crypto available for message-family test", False, "cryptography missing")
+        return
+    priv, pub = sign.generate_keypair()
+    kr = _keyring(alice=pub)
+
+    rec = presence.build("alice", online=True, via=presence.VIA_CONNECT, now=T0)
+    sign.attach_signature(rec, priv, key_id="alice")  # MESSAGE family, not record family
+    e = presence.parse(json.dumps(rec).encode(), "agent/alice/state", kr)
+    check("★ a MESSAGE-family (constant-covering) signature is not accepted as presence",
+          e["status"] != "ok", f"got {e['status']}: {e['detail']}")
+
+    # It stays rejected under a content-swap: the message-family sig never bound the
+    # content, so flipping online cannot turn it 'ok'. Forgeability made concrete.
+    rec["online"] = False
+    e2 = presence.parse(json.dumps(rec).encode(), "agent/alice/state", kr)
+    check("...and stays not-'ok' after a content-swap",
+          e2["status"] != "ok", f"got {e2['status']}")
+
+
+def test_presence_verifies_only_via_record_path() -> None:
+    """Red-team (brain cond-3, case iv): a STRUCTURAL guard. Presence must verify ONLY
+    through the record path. The message path (sign.verify_against_keyring) checks the
+    envelope subset -- a near-constant for a presence record that binds no content -- so
+    tolerating it would re-open the forgery. If anyone ever wires message-path tolerance
+    into presence.py, THIS fails loud. The invariant is only as durable as its guard."""
+    src = Path(presence.__file__).read_text(encoding="utf-8")
+    check("presence verifies via the RECORD path",
+          "verify_record_against_keyring" in src,
+          "presence.py no longer calls the record-path verifier")
+    # Strip the record-path name first so its '...verify_against_keyring' tail can't match.
+    stripped = src.replace("verify_record_against_keyring", "")
+    check("★ presence NEVER uses the message-path verifier (structural guard)",
+          "verify_against_keyring" not in stripped,
+          "presence.py references the message-path verifier -- record-path-only invariant broken")
+
+
 def test_topic_parsing() -> None:
     check("topic_for round-trips",
           presence.agent_id_from_topic(presence.topic_for("alice")) == "alice")
@@ -239,6 +283,8 @@ def test_persistent_session_needs_stable_id() -> None:
 def main() -> int:
     test_record_shape()
     test_sign_verify_roundtrip()
+    test_message_family_signature_is_rejected()
+    test_presence_verifies_only_via_record_path()
     test_topic_parsing()
     test_age_math()
     test_lwt_is_signed_and_looks_stale()
